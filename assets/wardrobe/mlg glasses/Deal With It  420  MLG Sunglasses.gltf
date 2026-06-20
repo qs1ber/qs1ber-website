@@ -1,0 +1,538 @@
+{
+    "accessors": [
+        {
+            "bufferView": 0,
+            "componentType": 5123,
+            "count": 1168,
+            "type": "SCALAR"
+        },
+        {
+            "bufferView": 1,
+            "componentType": 5126,
+            "count": 671,
+            "max": [
+                0.999997615814209,
+                0.999997615814209,
+                1
+            ],
+            "min": [
+                -0.999997615814209,
+                -0.999997615814209,
+                -1
+            ],
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 2,
+            "componentType": 5126,
+            "count": 671,
+            "max": [
+                0.9936389923095703,
+                0.9990941882133484
+            ],
+            "min": [
+                0.0009061690070666373,
+                0.0009061690070666373
+            ],
+            "type": "VEC2"
+        },
+        {
+            "bufferView": 1,
+            "componentType": 5126,
+            "count": 671,
+            "max": [
+                3.3758513927459717,
+                1.0000008344650269,
+                0.1341659128665924
+            ],
+            "min": [
+                -1,
+                -1,
+                0
+            ],
+            "type": "VEC3",
+            "byteOffset": 8052
+        },
+        {
+            "bufferView": 0,
+            "componentType": 5123,
+            "count": 4004,
+            "type": "SCALAR",
+            "byteOffset": 2336
+        },
+        {
+            "bufferView": 1,
+            "componentType": 5126,
+            "count": 2764,
+            "max": [
+                0.9986006617546082,
+                0.999997615814209,
+                1
+            ],
+            "min": [
+                -0.9986006617546082,
+                -0.999997615814209,
+                -1
+            ],
+            "type": "VEC3",
+            "byteOffset": 16104
+        },
+        {
+            "bufferView": 2,
+            "componentType": 5126,
+            "count": 2764,
+            "max": [
+                0.9991301894187927,
+                0.979823887348175
+            ],
+            "min": [
+                0.0008684400236234069,
+                0.0008683199994266033
+            ],
+            "type": "VEC2",
+            "byteOffset": 5368
+        },
+        {
+            "bufferView": 1,
+            "componentType": 5126,
+            "count": 2764,
+            "max": [
+                1.4079883098602295,
+                0.90646892786026,
+                0.03831647336483002
+            ],
+            "min": [
+                0.9739260077476501,
+                0.3027369976043701,
+                -0.38321200013160706
+            ],
+            "type": "VEC3",
+            "byteOffset": 49272
+        },
+        {
+            "bufferView": 0,
+            "componentType": 5123,
+            "count": 5775,
+            "type": "SCALAR",
+            "byteOffset": 10344
+        },
+        {
+            "bufferView": 1,
+            "componentType": 5126,
+            "count": 3902,
+            "max": [
+                0.999997615814209,
+                0.999997615814209,
+                1
+            ],
+            "min": [
+                -0.999997615814209,
+                -0.999997615814209,
+                -1
+            ],
+            "type": "VEC3",
+            "byteOffset": 82440
+        },
+        {
+            "bufferView": 2,
+            "componentType": 5126,
+            "count": 3902,
+            "max": [
+                0.8623670339584351,
+                0.9992288947105408
+            ],
+            "min": [
+                0.0007721189758740366,
+                0.0007705690222792327
+            ],
+            "type": "VEC2",
+            "byteOffset": 27480
+        },
+        {
+            "bufferView": 1,
+            "componentType": 5126,
+            "count": 3902,
+            "max": [
+                3.432863473892212,
+                1.0283441543579102,
+                0.1416449099779129
+            ],
+            "min": [
+                -1.0509400367736816,
+                -1.6510200500488281,
+                -10.524800300598145
+            ],
+            "type": "VEC3",
+            "byteOffset": 129264
+        }
+    ],
+    "asset": {
+        "extras": {
+            "author": "anshinowara (https://sketchfab.com/anshinowara)",
+            "license": "Standard (https://sketchfab.com/licenses)",
+            "source": "https://sketchfab.com/3d-models/deal-with-it-420-mlg-sunglasses-f283e62525f74b41bef9300a51eefed1",
+            "title": "Deal With It  420  MLG Sunglasses"
+        },
+        "generator": "OpenSceneGraph",
+        "version": "2.0"
+    },
+    "buffers": [
+        {
+            "byteLength": 256680,
+            "uri": "Deal With It  420  MLG Sunglasses.bin"
+        }
+    ],
+    "bufferViews": [
+        {
+            "buffer": 0,
+            "byteLength": 21896,
+            "target": 34963
+        },
+        {
+            "buffer": 0,
+            "byteOffset": 21896,
+            "byteStride": 12,
+            "byteLength": 176088,
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteOffset": 197984,
+            "byteStride": 8,
+            "byteLength": 58696,
+            "target": 34962
+        }
+    ],
+    "extensionsUsed": [
+        "KHR_materials_transmission"
+    ],
+    "images": [
+        {
+            "uri": "images/Deal with it sunglasses_Glass_BaseColor.png"
+        },
+        {
+            "uri": "images/Deal with it sunglasses_Glass_Metallic.png"
+        },
+        {
+            "uri": "images/Deal with it sunglasses_Glass_Normal.png"
+        },
+        {
+            "uri": "images/Deal with it sunglasses_Glass_Roughness.png"
+        },
+        {
+            "uri": "images/Deal with it sunglasses_Mid_BaseColor.png"
+        },
+        {
+            "uri": "images/Deal with it sunglasses_Mid_Metallic.png"
+        },
+        {
+            "uri": "images/Deal with it sunglasses_Mid_Normal.png"
+        },
+        {
+            "uri": "images/Deal with it sunglasses_Mid_Roughness.png"
+        },
+        {
+            "uri": "images/Deal with it sunglasses_Clips_BaseColor.png"
+        },
+        {
+            "uri": "images/Deal with it sunglasses_Clips_Metallic.png"
+        },
+        {
+            "uri": "images/Deal with it sunglasses_Clips_Normal.png"
+        },
+        {
+            "uri": "images/Deal with it sunglasses_Clips_Roughness.png"
+        }
+    ],
+    "materials": [
+        {
+            "doubleSided": true,
+            "extensions": {
+                "KHR_materials_transmission": {
+                    "transmissionFactor": 0.35,
+                    "transmissionTexture": {
+                        "texCoord": 0,
+                        "index": 0
+                    }
+                }
+            },
+            "name": "Glass",
+            "normalTexture": {
+                "texCoord": 0,
+                "index": 2
+            },
+            "pbrMetallicRoughness": {
+                "baseColorFactor": [
+                    1,
+                    1,
+                    1,
+                    0.65
+                ],
+                "baseColorTexture": {
+                    "texCoord": 0,
+                    "index": 0
+                },
+                "metallicRoughnessTexture": {
+                    "texCoord": 0,
+                    "index": 3
+                }
+            }
+        },
+        {
+            "doubleSided": true,
+            "name": "Mid",
+            "normalTexture": {
+                "texCoord": 0,
+                "index": 6
+            },
+            "pbrMetallicRoughness": {
+                "baseColorTexture": {
+                    "texCoord": 0,
+                    "index": 4
+                },
+                "metallicRoughnessTexture": {
+                    "texCoord": 0,
+                    "index": 7
+                }
+            }
+        },
+        {
+            "doubleSided": true,
+            "name": "Clips",
+            "normalTexture": {
+                "texCoord": 0,
+                "index": 10
+            },
+            "pbrMetallicRoughness": {
+                "baseColorTexture": {
+                    "texCoord": 0,
+                    "index": 8
+                },
+                "metallicRoughnessTexture": {
+                    "texCoord": 0,
+                    "index": 11
+                }
+            }
+        }
+    ],
+    "meshes": [
+        {
+            "name": "Glasses_Glass_0",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 1,
+                        "TEXCOORD_0": 2,
+                        "POSITION": 3,
+                        "TEXCOORD_1": 2,
+                        "TEXCOORD_2": 2
+                    },
+                    "indices": 0,
+                    "material": 0,
+                    "mode": 5
+                }
+            ]
+        },
+        {
+            "name": "Glasses_Mid_0",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 5,
+                        "TEXCOORD_0": 6,
+                        "POSITION": 7,
+                        "TEXCOORD_1": 6,
+                        "TEXCOORD_2": 6
+                    },
+                    "indices": 4,
+                    "material": 1,
+                    "mode": 5
+                }
+            ]
+        },
+        {
+            "name": "Glasses_Clips_0",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 9,
+                        "TEXCOORD_0": 10,
+                        "POSITION": 11,
+                        "TEXCOORD_1": 10,
+                        "TEXCOORD_2": 10
+                    },
+                    "indices": 8,
+                    "material": 2,
+                    "mode": 5
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "children": [
+                1
+            ],
+            "matrix": [
+                0.9999887347221375,
+                0.00028171512531116605,
+                -0.0047405739314854145,
+                0,
+                -0.0047489372082054615,
+                0.05932105705142021,
+                -0.9982276558876038,
+                0,
+                0,
+                0.9982389211654663,
+                0.059321723878383636,
+                0,
+                0.0911838561296463,
+                0.010437321849167347,
+                -30.04039764404297,
+                1
+            ],
+            "name": "Sketchfab_model"
+        },
+        {
+            "children": [
+                2
+            ],
+            "matrix": [
+                0.01,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0.01,
+                0,
+                0,
+                -0.01,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "name": "Deal with it sunglasses.fbx"
+        },
+        {
+            "children": [
+                3
+            ],
+            "name": "RootNode"
+        },
+        {
+            "children": [
+                4
+            ],
+            "matrix": [
+                880.371,
+                0,
+                0,
+                0,
+                0,
+                370.178,
+                0.000016181,
+                0,
+                0,
+                -0.000016181,
+                370.178,
+                0,
+                -1048.48,
+                0,
+                0,
+                1
+            ],
+            "name": "Glasses"
+        },
+        {
+            "children": [
+                5,
+                6,
+                7
+            ],
+            "name": "Glasses"
+        },
+        {
+            "mesh": 0,
+            "name": "Glasses_Glass_0"
+        },
+        {
+            "mesh": 1,
+            "name": "Glasses_Mid_0"
+        },
+        {
+            "mesh": 2,
+            "name": "Glasses_Clips_0"
+        }
+    ],
+    "samplers": [
+        {
+            "magFilter": 9729,
+            "minFilter": 9987,
+            "wrapS": 10497,
+            "wrapT": 10497
+        }
+    ],
+    "scene": 0,
+    "scenes": [
+        {
+            "name": "Scene",
+            "nodes": [
+                0
+            ]
+        }
+    ],
+    "textures": [
+        {
+            "sampler": 0,
+            "source": 0
+        },
+        {
+            "sampler": 0,
+            "source": 1
+        },
+        {
+            "sampler": 0,
+            "source": 2
+        },
+        {
+            "sampler": 0,
+            "source": 3
+        },
+        {
+            "sampler": 0,
+            "source": 4
+        },
+        {
+            "sampler": 0,
+            "source": 5
+        },
+        {
+            "sampler": 0,
+            "source": 6
+        },
+        {
+            "sampler": 0,
+            "source": 7
+        },
+        {
+            "sampler": 0,
+            "source": 8
+        },
+        {
+            "sampler": 0,
+            "source": 9
+        },
+        {
+            "sampler": 0,
+            "source": 10
+        },
+        {
+            "sampler": 0,
+            "source": 11
+        }
+    ]
+}

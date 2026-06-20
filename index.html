@@ -1,0 +1,272 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Wasyl Szamborski — qs1ber</title>
+    <meta
+      name="description"
+      content="Motion designer, VFX artist, director & DOP. Cinematic storytelling, commercial content, and liquid-glass 3D experiences."
+    />
+
+    <!-- Proxima Nova via Adobe Fonts -->
+    <link rel="preconnect" href="https://use.typekit.net" />
+    <link rel="stylesheet" href="https://use.typekit.net/iev3vzn.css" />
+
+    <link rel="stylesheet" href="styles/main.css?b=20260620k" />
+
+    <script>
+      window.__setWardrobeOpen = function (open) {
+        document.body.classList.toggle("is-wardrobe-open", open);
+        var panel = document.getElementById("wardrobePanel");
+        var toggle = document.getElementById("wardrobeToggle");
+        if (panel) {
+          panel.hidden = !open;
+          panel.classList.toggle("is-open", open);
+          panel.setAttribute("aria-hidden", String(!open));
+        }
+        if (toggle) toggle.setAttribute("aria-expanded", String(open));
+        if (window.__wardrobeSceneSync) window.__wardrobeSceneSync(open);
+      };
+
+      window.toggleWardrobe = function (e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (window.QS1BER && window.QS1BER.wardrobe && window.QS1BER.wardrobe.toggle) {
+          window.QS1BER.wardrobe.toggle();
+          return false;
+        }
+        window.__setWardrobeOpen(!document.body.classList.contains("is-wardrobe-open"));
+        return false;
+      };
+
+      window.closeWardrobe = function (e) {
+        if (e) {
+          e.preventDefault();
+          e.stopPropagation();
+        }
+        if (window.QS1BER && window.QS1BER.wardrobe && window.QS1BER.wardrobe.close) {
+          window.QS1BER.wardrobe.close();
+          return false;
+        }
+        window.__setWardrobeOpen(false);
+        return false;
+      };
+
+      function __pointInEl(el, x, y) {
+        if (!el) return false;
+        var st = getComputedStyle(el);
+        if (st.pointerEvents === "none" || st.display === "none" || st.visibility === "hidden") return false;
+        var r = el.getBoundingClientRect();
+        if (r.width < 1 || r.height < 1) return false;
+        return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+      }
+
+      function __wardrobePointerHit(x, y) {
+        if (__pointInEl(document.getElementById("wardrobeToggle"), x, y)) return { action: "toggle" };
+        if (!document.body.classList.contains("is-wardrobe-open")) return null;
+
+        var panel = document.getElementById("wardrobePanel");
+        if (!panel || !__pointInEl(panel, x, y)) return null;
+
+        var hit = document.elementFromPoint(x, y);
+        if (!hit || !panel.contains(hit)) return { action: "block" };
+
+        if (hit.closest("[data-wardrobe-close]")) return { action: "close" };
+
+        var tab = hit.closest(".wardrobe__tab[data-category]");
+        if (tab) return { action: "tab", category: tab.dataset.category };
+
+        var item = hit.closest(".wardrobe__item[data-item]");
+        if (item) {
+          return {
+            action: "item",
+            itemId: item.dataset.item || null,
+            category: item.dataset.category || null,
+          };
+        }
+
+        return { action: "block" };
+      }
+
+      window.__wardrobePointerHit = __wardrobePointerHit;
+
+      document.addEventListener(
+        "pointerdown",
+        function (e) {
+          if (e.button !== 0) return;
+          var hit = __wardrobePointerHit(e.clientX, e.clientY);
+          if (!hit) return;
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          if (hit.action === "close") closeWardrobe(e);
+          else if (hit.action === "toggle") toggleWardrobe(e);
+          else if (window.__wardrobeHandlePointer) window.__wardrobeHandlePointer(hit);
+        },
+        true
+      );
+    </script>
+
+    <script type="importmap">
+      {
+        "imports": {
+          "three": "https://unpkg.com/three@0.175.0/build/three.module.js",
+          "three/addons/": "https://unpkg.com/three@0.175.0/examples/jsm/"
+        }
+      }
+    </script>
+    <script>
+      window.QS1BER = { chapterIndex: 0, chapterT: 1, sceneReady: false, snapLock: false };
+    </script>
+  </head>
+  <body class="is-loading">
+    <div id="siteBg" aria-hidden="true"></div>
+    <canvas id="bgCanvas" aria-hidden="true"></canvas>
+
+    <!-- Preloader: white solid → reveal -->
+    <div class="preloader" id="preloader" aria-busy="true" aria-label="Loading">
+      <div class="preloader__inner">
+        <div class="preloader__mark" aria-hidden="true">
+          <img
+            class="preloader__gif"
+            src="assets/preloader/gidforme1.gif"
+            width="80"
+            height="80"
+            alt=""
+          />
+        </div>
+        <p class="preloader__label">qs1ber</p>
+        <div class="preloader__bar">
+          <span class="preloader__fill"></span>
+        </div>
+        <span class="preloader__pct">0%</span>
+      </div>
+    </div>
+
+    <ul class="chapter-rail glass" id="chapterRail" aria-label="Sections"></ul>
+
+    <div id="scrollRoot">
+    <main>
+      <!-- HERO / BIO -->
+      <section class="section hero" id="hero" data-chapter="0">
+        <div class="hero__layout">
+          <div class="hero__copy">
+            <p class="hero__eyebrow">Direct · Shoot · Post</p>
+            <h1 class="hero__name">Wasyl<br />Szamborski</h1>
+            <p class="hero__bio">
+              Commercials, music videos, branded and creator content — from set
+              to final delivery.
+            </p>
+            <p class="hero__location">
+              <svg
+                class="hero__location-icon"
+                viewBox="0 0 24 24"
+                aria-hidden="true"
+                focusable="false"
+              >
+                <path
+                  d="M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5a2.5 2.5 0 1 1 0-5 2.5 2.5 0 0 1 0 5z"
+                />
+              </svg>
+              Warsaw
+            </p>
+            <nav class="hero__links" aria-label="Social and contact">
+              <a
+                class="hero__link"
+                href="https://instagram.com/qs1bervsh"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Instagram @qs1bervsh"
+              >
+                <svg class="hero__link-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M7 3h10a4 4 0 0 1 4 4v10a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4V7a4 4 0 0 1 4-4zm0 2a2 2 0 0 0-2 2v10a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H7zm5 3.5A4.5 4.5 0 1 1 7.5 13 4.5 4.5 0 0 1 12 8.5zm0 2A2.5 2.5 0 1 0 14.5 13 2.5 2.5 0 0 0 12 10.5zM17.8 6.3a1 1 0 1 1-1 1 1 1 0 0 1 1-1z" />
+                </svg>
+              </a>
+              <a
+                class="hero__link"
+                href="https://youtube.com/@qs1ber"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="YouTube @qs1ber"
+              >
+                <svg class="hero__link-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M21.6 7.2a2.5 2.5 0 0 0-1.76-1.77C18.12 5 12 5 12 5s-6.12 0-7.84.43A2.5 2.5 0 0 0 2.4 7.2 26.2 26.2 0 0 0 2 12a26.2 26.2 0 0 0 .4 4.8 2.5 2.5 0 0 0 1.76 1.77C5.88 19 12 19 12 19s6.12 0 7.84-.43a2.5 2.5 0 0 0 1.76-1.77A26.2 26.2 0 0 0 22 12a26.2 26.2 0 0 0-.4-4.8zM10 15.5v-7l6 3.5-6 3.5z" />
+                </svg>
+              </a>
+              <a
+                class="hero__link"
+                href="https://t.me/qs1beraw"
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label="Telegram @qs1beraw"
+              >
+                <svg class="hero__link-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M21.9 4.6 3.6 11.8c-1.2.5-1.2 1.2-.2 1.5l4.6 1.4 1.8 5.5c.2.6.5.8 1 .8.4 0 .6-.2.8-.6l2.6-2.5 5.4 4c1 .6 1.7.3 1.9-1.1l3.2-15.2c.3-1.3-.5-1.9-1.6-1.4zM8.8 13.8l9.9-6.2c.5-.3.9-.1.5.2l-8.1 7.3-.3 3.4-1.2-3.6z" />
+                </svg>
+              </a>
+              <a class="hero__link" href="mailto:writeto@qs1ber.com" aria-label="Email writeto@qs1ber.com">
+                <svg class="hero__link-icon" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
+                  <path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7a2 2 0 0 1 2-2zm0 2 8 5 8-5H4zm16 0-8 4.94L4 7v10h16V7z" />
+                </svg>
+              </a>
+            </nav>
+          </div>
+        </div>
+        <p class="hero__scroll-hint">Scroll — the smiley follows you ↓</p>
+      </section>
+
+      <!-- PROJECTS (injected by main.js) -->
+      <div id="projectTrack"></div>
+
+      <!-- CONTACT -->
+      <section class="section contact" id="contact">
+        <div class="container contact__inner glass">
+          <p class="hero__eyebrow">Contact</p>
+          <h2 class="contact__title">Let's build something loud.</h2>
+          <p class="hero__bio">
+            Open for commercial work, music videos, and creative direction.
+          </p>
+          <div class="contact__links">
+            <a href="mailto:iikly323vsh@gmail.com">iikly323vsh@gmail.com</a>
+            <a href="tel:+48573816506">+48 573 816 506</a>
+            <a href="https://instagram.com/qs1bervsh" target="_blank" rel="noopener">@qs1bervsh</a>
+          </div>
+        </div>
+      </section>
+    </main>
+    </div>
+
+    <p class="edit-hint" id="editHint" hidden>E move · R rotate · T scale · ↑↓←→ nudge · Esc done</p>
+
+    <button
+      type="button"
+      class="wardrobe-toggle glass"
+      id="wardrobeToggle"
+      aria-expanded="false"
+      aria-controls="wardrobePanel"
+    >
+      <svg class="wardrobe-toggle__icon" viewBox="0 0 24 24" aria-hidden="true">
+        <path d="M6 4h12l-1.2 4.5H7.2L6 4zm1.8 6.5h8.4l-1.4 9H9.2l-1.4-9zM9 3h6l.6 2H8.4L9 3z"/>
+      </svg>
+      <span class="wardrobe-toggle__label">Wardrobe</span>
+    </button>
+
+    <aside class="wardrobe glass" id="wardrobePanel" hidden aria-label="Head accessories" aria-hidden="true">
+      <header class="wardrobe__head">
+        <div>
+          <p class="wardrobe__eyebrow">Fit check</p>
+          <h2 class="wardrobe__title">Wardrobe</h2>
+        </div>
+        <button type="button" class="wardrobe__close" data-wardrobe-close aria-label="Close wardrobe">×</button>
+      </header>
+      <p class="wardrobe__equipped">Nothing equipped yet</p>
+      <nav class="wardrobe__tabs" aria-label="Accessory categories"></nav>
+      <div class="wardrobe__grid" role="list"></div>
+      <p class="wardrobe__note">Pick accessories — eye stretch pauses while MLG glasses are on.</p>
+    </aside>
+
+    <script type="module" src="src/main.js?b=20260620k"></script>
+  </body>
+</html>

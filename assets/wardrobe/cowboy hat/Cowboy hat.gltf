@@ -1,0 +1,271 @@
+{
+    "accessors": [
+        {
+            "bufferView": 0,
+            "componentType": 5123,
+            "count": 4729,
+            "type": "SCALAR"
+        },
+        {
+            "bufferView": 1,
+            "componentType": 5126,
+            "count": 1764,
+            "max": [
+                0.9996926784515381,
+                0.9998835325241089,
+                0.9965559244155884
+            ],
+            "min": [
+                -0.9992551803588867,
+                -0.9998830556869507,
+                -0.9902410507202148
+            ],
+            "type": "VEC3"
+        },
+        {
+            "bufferView": 2,
+            "componentType": 5126,
+            "count": 1764,
+            "max": [
+                0.9880673289299011,
+                0.987484872341156
+            ],
+            "min": [
+                0.36250099539756775,
+                0.036862000823020935
+            ],
+            "type": "VEC2"
+        },
+        {
+            "bufferView": 1,
+            "componentType": 5126,
+            "count": 1764,
+            "max": [
+                14.186563491821289,
+                7.150388240814209,
+                18.192167282104492
+            ],
+            "min": [
+                -17.535999298095703,
+                -7.156750202178955,
+                -19.893699645996094
+            ],
+            "type": "VEC3",
+            "byteOffset": 21168
+        }
+    ],
+    "asset": {
+        "extras": {
+            "author": "sachinkr858895 (https://sketchfab.com/sachinkr858895)",
+            "license": "Standard (https://sketchfab.com/licenses)",
+            "source": "https://sketchfab.com/3d-models/cowboy-hat-f38dd154512048c1b21f76ce038c4b75",
+            "title": "Cowboy hat"
+        },
+        "generator": "OpenSceneGraph",
+        "version": "2.0"
+    },
+    "buffers": [
+        {
+            "byteLength": 65908,
+            "uri": "Cowboy hat.bin"
+        }
+    ],
+    "bufferViews": [
+        {
+            "buffer": 0,
+            "byteLength": 9460,
+            "target": 34963
+        },
+        {
+            "buffer": 0,
+            "byteOffset": 9460,
+            "byteStride": 12,
+            "byteLength": 42336,
+            "target": 34962
+        },
+        {
+            "buffer": 0,
+            "byteOffset": 51796,
+            "byteStride": 8,
+            "byteLength": 14112,
+            "target": 34962
+        }
+    ],
+    "images": [
+        {
+            "uri": "images/cowboy_1001_BaseColor.jpg"
+        },
+        {
+            "uri": "images/cowboy_1001_Metalness.jpg"
+        },
+        {
+            "uri": "images/cowboy_1001_Normal.jpg"
+        },
+        {
+            "uri": "images/cowboy_1001_Roughness.jpg"
+        }
+    ],
+    "materials": [
+        {
+            "doubleSided": true,
+            "name": "pasted__M_Hat",
+            "normalTexture": {
+                "texCoord": 0,
+                "index": 2
+            },
+            "pbrMetallicRoughness": {
+                "baseColorTexture": {
+                    "texCoord": 0,
+                    "index": 0
+                },
+                "metallicRoughnessTexture": {
+                    "texCoord": 0,
+                    "index": 3
+                }
+            }
+        }
+    ],
+    "meshes": [
+        {
+            "name": "Cowboy_hat_pasted__M_Hat_0",
+            "primitives": [
+                {
+                    "attributes": {
+                        "NORMAL": 1,
+                        "TEXCOORD_0": 2,
+                        "POSITION": 3,
+                        "TEXCOORD_1": 2
+                    },
+                    "indices": 0,
+                    "material": 0,
+                    "mode": 5
+                }
+            ]
+        }
+    ],
+    "nodes": [
+        {
+            "children": [
+                1
+            ],
+            "matrix": [
+                0.7211359143257141,
+                -0.027684250846505165,
+                0.692240297794342,
+                0,
+                0.6927936673164368,
+                0.028816817328333855,
+                -0.7205598950386047,
+                0,
+                0,
+                0.999201238155365,
+                0.039960313588380814,
+                0,
+                0.0668138936161995,
+                -0.8910790681838989,
+                -0.7309685349464417,
+                1
+            ],
+            "name": "Sketchfab_model"
+        },
+        {
+            "children": [
+                2
+            ],
+            "matrix": [
+                0.01,
+                0,
+                0,
+                0,
+                0,
+                0,
+                0.01,
+                0,
+                0,
+                -0.01,
+                0,
+                0,
+                0,
+                0,
+                0,
+                1
+            ],
+            "name": "836ae22ffecd4f0a9494af22340d883f.fbx"
+        },
+        {
+            "children": [
+                3
+            ],
+            "name": "RootNode"
+        },
+        {
+            "children": [
+                4
+            ],
+            "matrix": [
+                1.58066,
+                -3.50978e-16,
+                -3.50978e-16,
+                0,
+                3.50978e-16,
+                1.58066,
+                6.9093e-8,
+                0,
+                3.50978e-16,
+                -6.9093e-8,
+                1.58066,
+                0,
+                1.97348,
+                92.6828,
+                5.98547,
+                1
+            ],
+            "name": "Cowboy_hat"
+        },
+        {
+            "children": [
+                5
+            ],
+            "name": "Cowboy_hat"
+        },
+        {
+            "mesh": 0,
+            "name": "Cowboy_hat_pasted__M_Hat_0"
+        }
+    ],
+    "samplers": [
+        {
+            "magFilter": 9729,
+            "minFilter": 9987,
+            "wrapS": 10497,
+            "wrapT": 10497
+        }
+    ],
+    "scene": 0,
+    "scenes": [
+        {
+            "name": "Scene",
+            "nodes": [
+                0
+            ]
+        }
+    ],
+    "textures": [
+        {
+            "sampler": 0,
+            "source": 0
+        },
+        {
+            "sampler": 0,
+            "source": 1
+        },
+        {
+            "sampler": 0,
+            "source": 2
+        },
+        {
+            "sampler": 0,
+            "source": 3
+        }
+    ]
+}
