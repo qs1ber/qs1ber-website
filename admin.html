@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <meta name="theme-color" content="#f2f0ef" />
+    <title>qs1ber — Admin</title>
+    <link rel="stylesheet" href="styles/admin.css?b=20260621i" />
+  </head>
+  <body>
+    <div id="adminGate" class="admin-gate">
+      <div class="admin-gate__card">
+        <form id="adminLoginForm">
+          <p class="admin-top__eyebrow">qs1ber portfolio</p>
+          <h1>Admin</h1>
+          <p class="admin-gate__hint">Password required.</p>
+          <label class="admin-gate__field">
+            Password
+            <input type="password" id="adminPassword" autocomplete="current-password" required />
+          </label>
+          <p class="admin-gate__error" id="adminLoginError" hidden>Wrong password</p>
+          <button type="submit" class="admin-btn admin-gate__unlock" id="adminUnlockBtn">Unlock</button>
+        </form>
+        <div class="admin-gate__actions">
+          <a class="admin-btn admin-btn--ghost" href="./" data-admin-nav="site">Back to site</a>
+        </div>
+      </div>
+    </div>
+
+    <div id="adminApp" hidden>
+      <header class="admin-top">
+        <div>
+          <p class="admin-top__eyebrow">qs1ber portfolio</p>
+          <h1>Project admin</h1>
+        </div>
+        <div class="admin-top__actions">
+          <a class="admin-btn admin-btn--ghost" href="./" data-admin-nav="site">View site</a>
+          <button type="button" class="admin-btn" id="adminSave">Save locally</button>
+          <button type="button" class="admin-btn" id="adminExport">Export JSON</button>
+          <button type="button" class="admin-btn admin-btn--ghost" id="adminReset">Reset override</button>
+        </div>
+      </header>
+
+      <p class="admin-status" id="adminStatus"></p>
+      <p class="admin-override" id="adminOverride" hidden>Live override active in this browser</p>
+
+      <div class="admin-layout">
+        <aside class="admin-sidebar">
+          <div class="admin-sidebar__head">
+            <h2>Projects</h2>
+            <button type="button" class="admin-btn admin-btn--ghost" id="adminAddProject">+ New</button>
+          </div>
+          <div class="admin-list" id="adminList"></div>
+          <button type="button" class="admin-btn admin-btn--danger" id="adminRemoveProject">Delete project</button>
+        </aside>
+        <main class="admin-main">
+          <form id="adminForm" class="admin-form" onsubmit="return false"></form>
+        </main>
+      </div>
+
+      <footer class="admin-foot">
+        <p>
+          <strong>Save locally</strong> updates the live site in this browser only.
+          <strong>Export JSON</strong> → paste into <code>data/projects.js</code> → <code>git push</code> for production.
+        </p>
+      </footer>
+    </div>
+
+    <script type="module" src="src/adminBoot.js?b=20260621i"></script>
+  </body>
+</html>

@@ -1,7 +1,9 @@
 /** Shotdeck-style fullscreen viewer + media strip per project */
 
-import { projects } from "../../data/projects.js?b=20260620i";
-import { getYoutubeId, getGoogleDriveId, googleDrivePreviewUrl, loadYoutubeApi, youtubePosterUrls } from "../utils/youtube.js?b=20260620i";
+import { getProjects } from "../../data/projectsStore.js?b=20260621f";
+import { getYoutubeId, getGoogleDriveId, googleDrivePreviewUrl, loadYoutubeApi, youtubePosterUrls, youtubeThumbUrl } from "../utils/youtube.js?b=20260621z";
+
+const projects = getProjects();
 
 const ytPlayers = new Map();
 let ytMountId = 0;
@@ -48,7 +50,7 @@ function bindProjectViewerUi() {
       if (!nav) return;
       const panel = nav.closest(".project-panel");
       const viewer = panel ? panelViewers.get(Number(panel.dataset.chapter) - 1) : null;
-      if (!viewer) return;
+      if (!viewer || viewer.getMediaCount() <= 1) return;
       e.preventDefault();
       e.stopPropagation();
       const delta = nav.classList.contains("project-viewer__prev") ? -1 : 1;
@@ -386,10 +388,13 @@ function resizeYoutubeStage(stage, playerOverride) {
   player.setSize(w, h);
 }
 
-export function paletteForMedia(projectIndex, mediaIndex) {
+export function getProjectMedia(project) {
+  return (project?.media || []).filter((m) => Boolean(String(m.src || "").trim()));
+}
+
+export function paletteForMedia(projectIndex, media) {
   const project = projects[projectIndex];
   if (!project) return [];
-  const media = project.media[mediaIndex];
   if (media?.palette?.length) return media.palette;
   return project.palette || [];
 }
@@ -435,54 +440,47 @@ export function initProjectViewers() {
     const stage = panel.querySelector(".project-viewer__stage");
     const strip = panel.querySelector(".project-strip");
     const thumbs = Array.from(strip?.querySelectorAll(".project-strip__item") ?? []);
-    if (!stage || !strip || !thumbs.length) return;
+    const project = projects[panelIndex];
+    const mediaList = getProjectMedia(project);
+    if (!stage || !mediaList.length) return;
 
     let active = 0;
 
     const render = (index) => {
-      active = (index + thumbs.length) % thumbs.length;
-      const thumb = thumbs[active];
-      const type = thumb.dataset.type;
-      const src = thumb.dataset.src;
-      const poster = thumb.dataset.poster || "";
-      const label = thumb.dataset.label || "Media";
+      active = (index + mediaList.length) % mediaList.length;
+      const m = mediaList[active];
+      const type = m.type;
+      const src = m.src;
+      const ytId = type === "video" ? getYoutubeId(src) : null;
+      const poster = m.poster || (ytId ? youtubeThumbUrl(ytId, "sd") : "") || "";
+      const label = m.label || "Media";
 
       thumbs.forEach((t, i) => t.classList.toggle("is-active", i === active));
-      renderProjectPalette(
-        panel.querySelector("[data-palette-root]"),
-        paletteForMedia(panelIndex, active)
-      );
+      renderProjectPalette(panel.querySelector("[data-palette-root]"), paletteForMedia(panelIndex, m));
       destroyYoutubeStage(stage);
 
-      if (src) {
-        if (type === "video") {
-          const ytId = getYoutubeId(src);
-          const driveId = getGoogleDriveId(src);
-          if (ytId) {
-            mountYoutube(stage, ytId, label, poster);
-          } else if (driveId) {
-            mountGoogleDrive(stage, driveId, label);
-          } else {
-            stage.innerHTML = `<video class="project-viewer__media" src="${src}" poster="${poster}" controls playsinline preload="metadata"></video>`;
-          }
+      if (type === "video") {
+        const driveId = getGoogleDriveId(src);
+        if (ytId) {
+          mountYoutube(stage, ytId, label, poster);
+        } else if (driveId) {
+          mountGoogleDrive(stage, driveId, label);
         } else {
-          stage.innerHTML = `<img class="project-viewer__media" src="${src}" alt="${label}" />`;
+          stage.innerHTML = `<video class="project-viewer__media" src="${src}" poster="${poster}" controls playsinline preload="metadata"></video>`;
         }
       } else {
-        const hue = Number(thumb.dataset.hue) || 330;
-        stage.innerHTML = `
-          <div class="project-viewer__placeholder" style="background:linear-gradient(145deg,hsl(${hue},55%,88%),hsl(${hue + 18},70%,78%))">
-            <span class="project-viewer__ph-icon">${type === "video" ? "▶" : "◻"}</span>
-            <span class="project-viewer__ph-label">${label}</span>
-          </div>`;
+        stage.innerHTML = `<img class="project-viewer__media" src="${src}" alt="${label}" />`;
       }
 
-      strip.scrollTo({ left: thumb.offsetLeft - 24, behavior: "smooth" });
+      if (strip && thumbs[active]) {
+        strip.scrollTo({ left: thumbs[active].offsetLeft - 24, behavior: "smooth" });
+      }
     };
 
     panelViewers.set(panelIndex, {
       render,
       getActive: () => active,
+      getMediaCount: () => mediaList.length,
     });
 
     panelBooters.set(panelIndex, () => {

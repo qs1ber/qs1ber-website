@@ -3,12 +3,13 @@ cd /d "%~dp0"
 echo.
 echo  ========================================
 echo   qs1ber portfolio  [build 20260621a]
-echo   http://localhost:8080
+echo   Site:  http://localhost:8080
+echo   Admin: http://localhost:8080/admin.html
 echo   or: npm run dev  -^>  http://localhost:3000
 echo  ========================================
 echo.
 echo  IMPORTANT: open via this server, NOT file://
-echo  (3D + scroll require HTTP)
+echo  (3D, scroll, admin require HTTP)
 echo.
 where py >nul 2>&1 && (
   py -m http.server 8080

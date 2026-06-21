@@ -1,25 +1,56 @@
-import { BUILD } from "./version.js?b=20260620k";
-import { projects } from "../../data/projects.js?b=20260620k";
-import { SmileyScene } from "./scene/SmileyScene.js?b=20260620k";
-import { initProjectViewers, ensureProjectViewer, pauseAllProjectMedia, renderProjectPalette } from "./ui/projectViewer.js?b=20260620k";
-import { initWardrobe } from "./ui/wardrobe.js?b=20260620k";
-import { flowEase, scrollEase } from "./utils/easing.js?b=20260620k";
-import { getYoutubeId, youtubeThumbUrl, loadYoutubeApi } from "./utils/youtube.js?b=20260620k";
-import { smileyOverlayMode } from "./scene/scrollVisuals.js?b=20260620k";
+import { BUILD } from "./version.js?b=20260624a";
+import { getProjects } from "../data/projectsStore.js?b=20260624a";
+import { SmileyScene } from "./scene/SmileyScene.js?b=20260624a";
+import { initProjectViewers, ensureProjectViewer, pauseAllProjectMedia, renderProjectPalette, getProjectMedia } from "./ui/projectViewer.js?b=20260624a";
+import { initWardrobe } from "./ui/wardrobe.js?b=20260624a";
+import { initQs1berRadio } from "./ui/qs1berRadio.js?b=20260624a";
+import { flowEase, scrollEase } from "./utils/easing.js?b=20260624a";
+import { getYoutubeId, youtubeThumbUrl, loadYoutubeApi } from "./utils/youtube.js?b=20260624a";
+import { getHeroStackBlend, isProjectChapter, smileyOverlayMode } from "./scene/scrollVisuals.js?b=20260624a";
 
 console.info(`[qs1ber] build ${BUILD}`);
 
+const projects = getProjects();
+
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+if (isCoarsePointer) {
+  document.documentElement.classList.add("is-coarse-pointer");
+}
 const CONTACT_CHAPTER = projects.length + 1;
 const SCROLL_DURATION = 620;
 
+function mediaPalette(project, media) {
+  if (media?.palette?.length) return media.palette;
+  return project.palette || [];
+}
+
+function stripPaletteStyle(palette, fallbackHue) {
+  if (!palette?.length) {
+    return `--ph-hue:${fallbackHue};`;
+  }
+  const a = palette[0].color;
+  const b = palette[Math.min(1, palette.length - 1)].color;
+  const c = palette[palette.length - 1].color;
+  return `--strip-a:${a};--strip-b:${b};--strip-c:${c};--ph-hue:${fallbackHue};`;
+}
+
 function syncPageMode(fromIndex, toIndex, scrollT) {
+  const heroStack = getHeroStackBlend(fromIndex, toIndex, scrollT);
+  document.documentElement.style.setProperty("--hero-stack", String(heroStack));
   const canvasFront = smileyOverlayMode(fromIndex, toIndex, scrollT);
-  const inProjectScroll = scrollT < 1 && (fromIndex >= 1 || toIndex >= 1);
-  const heroActive = toIndex < 1 && scrollT >= 1;
+  const inProjectScroll =
+    scrollT < 1 && (isProjectChapter(fromIndex) || isProjectChapter(toIndex));
+  const heroActive =
+    (toIndex < 1 || toIndex === CONTACT_CHAPTER) && scrollT >= 1;
+  const heroReturning =
+    (isProjectChapter(fromIndex) || fromIndex === CONTACT_CHAPTER) &&
+    toIndex < 1 &&
+    scrollT < 1;
   document.body.classList.toggle("is-canvas-front", canvasFront);
   document.body.classList.toggle("is-project-scroll", inProjectScroll);
   document.body.classList.toggle("is-hero-active", heroActive);
+  document.body.classList.toggle("is-hero-returning", heroReturning);
 }
 
 function buildChapterRail() {
@@ -33,7 +64,7 @@ function buildChapterRail() {
   rail.innerHTML = items
     .map(
       (item) =>
-        `<li class="chapter-rail__item${item.i === 0 ? " is-active" : ""}" data-i="${item.i}" title="${item.title}"></li>`
+        `<li class="chapter-rail__cell"><button type="button" class="chapter-rail__item${item.i === 0 ? " is-active" : ""}" data-i="${item.i}" aria-label="${item.title}" title="${item.title}"></button></li>`
     )
     .join("");
 }
@@ -53,9 +84,7 @@ function buildProjectPanels() {
       { label: "Client", value: p.client },
       { label: "Year", value: p.year },
       { label: "Format", value: p.format },
-      p.postTools
-        ? { label: "Post-prod", value: p.postTools }
-        : { label: "Tools", value: p.tools.join(" · ") },
+      { label: "Post prod", value: p.postTools || p.tools?.join(" · ") || "—" },
       ...(p.camera ? [{ label: "Camera", value: p.camera }] : []),
       ...(p.lenses ? [{ label: "Lenses", value: p.lenses }] : []),
     ];
@@ -64,12 +93,17 @@ function buildProjectPanels() {
       .map(({ label, value }) => `<div><dt>${label}</dt><dd>${value}</dd></div>`)
       .join("");
 
-    const stripItems = p.media
+    const stripMedia = getProjectMedia(p);
+
+    const stripItems = stripMedia
       .map((m, mi) => {
         const ytId = m.type === "video" ? getYoutubeId(m.src) : null;
         const thumbPoster = m.poster || (ytId ? youtubeThumbUrl(ytId, "sd") : "");
+        const palette = mediaPalette(p, m);
+        const stripStyle = stripPaletteStyle(palette, m.placeholderHue);
         return `
         <button type="button" class="project-strip__item${mi === 0 ? " is-active" : ""}"
+          style="${stripStyle}"
           data-type="${m.type}"
           data-src="${m.src || ""}"
           data-poster="${thumbPoster}"
@@ -77,20 +111,21 @@ function buildProjectPanels() {
           data-hue="${m.placeholderHue}"
           aria-label="${m.label}">
           ${
-            m.src
-              ? m.type === "video"
-                ? ytId
-                  ? `<img src="${thumbPoster}" alt="${m.label}" loading="lazy" />`
-                  : thumbPoster
-                    ? `<img src="${thumbPoster}" alt="${m.label}" loading="lazy" />`
-                    : `<video muted playsinline preload="metadata" src="${m.src}"></video>`
-                : `<img src="${m.src}" alt="${m.label}" loading="lazy" />`
-              : `<span class="project-strip__ph" style="background:linear-gradient(135deg,hsl(${m.placeholderHue},60%,82%),hsl(${m.placeholderHue + 20},65%,72%))">${m.type === "video" ? "▶" : ""}</span>`
+            m.type === "video"
+              ? ytId || thumbPoster
+                ? `<img src="${thumbPoster}" alt="${m.label}" loading="lazy" />`
+                : `<video muted playsinline preload="metadata" src="${m.src}"></video>`
+              : `<img src="${m.src}" alt="${m.label}" loading="lazy" />`
           }
           <span class="project-strip__caption">${m.label}</span>
         </button>`;
       })
       .join("");
+
+    const stripHtml =
+      stripMedia.length > 1
+        ? `<div class="project-strip project-strip--dock" role="tablist" aria-label="Project media">${stripItems}</div>`
+        : "";
 
     article.innerHTML = `
       <div class="project-panel__layout">
@@ -100,7 +135,7 @@ function buildProjectPanels() {
           <button type="button" class="project-viewer__nav project-viewer__next" aria-label="Next">›</button>
         </div>
 
-        <div class="project-strip project-strip--dock" role="tablist" aria-label="Project media">${stripItems}</div>
+        ${stripHtml}
 
         <div class="project-meta glass project-meta--${(i + 1) % 2 === 1 ? "smiley-left" : "smiley-right"}">
           <div class="project-meta__companion" aria-hidden="true">
@@ -226,6 +261,7 @@ function initScroll(state, scene) {
     document.body.classList.remove("is-transitioning");
     updateRail(toIndex);
     syncPageMode(toIndex, toIndex, 1);
+    if (toIndex === 0) pauseAllProjectMedia();
     if (toIndex >= 1 && toIndex <= projects.length) {
       ensureProjectViewer(toIndex - 1);
       // YouTube mount shifts section offsets — re-clamp after layout settles.
@@ -276,10 +312,18 @@ function initScroll(state, scene) {
     scrollRaf = requestAnimationFrame(tick);
   };
 
+  const chapterIndexFromId = (chapterId) =>
+    sections().findIndex((el) => Number(el.dataset.chapter) === chapterId);
+
   const updateRail = (index) => {
+    const chapterId = Number(sections()[index]?.dataset.chapter ?? index);
+    let activeBtn = null;
     document.querySelectorAll(".chapter-rail__item").forEach((el) => {
-      el.classList.toggle("is-active", Number(el.dataset.i) === index);
+      const isActive = Number(el.dataset.i) === chapterId;
+      el.classList.toggle("is-active", isActive);
+      if (isActive) activeBtn = el;
     });
+    activeBtn?.scrollIntoView({ block: "nearest", behavior: reduceMotion ? "auto" : "smooth" });
   };
 
   const applyScroll = (fromIndex, toIndex, scrollT) => {
@@ -296,7 +340,7 @@ function initScroll(state, scene) {
     const fromIndex = current;
     if (index === fromIndex && !immediate) return;
 
-    if (fromIndex >= 1 && fromIndex <= projects.length) {
+    if (fromIndex >= 1 && fromIndex <= projects.length && index !== 0) {
       pauseAllProjectMedia();
     }
 
@@ -341,6 +385,17 @@ function initScroll(state, scene) {
     const strip = e.target.closest(".project-strip");
     if (strip && Math.abs(e.deltaX) > Math.abs(e.deltaY)) return;
 
+    const rail = e.target.closest(".chapter-rail");
+    if (rail) {
+      const overflow = rail.scrollHeight - rail.clientHeight;
+      if (overflow > 4) {
+        const top = rail.scrollTop;
+        if ((e.deltaY > 0 && top < overflow - 1) || (e.deltaY < 0 && top > 0)) {
+          return;
+        }
+      }
+    }
+
     const metaBody = e.target.closest(".project-meta__content");
     if (metaBody) {
       const overflow = metaBody.scrollHeight - metaBody.clientHeight;
@@ -367,12 +422,28 @@ function initScroll(state, scene) {
   root.addEventListener("scroll", lockScrollPosition, { passive: true });
 
   let touchY = 0;
-  root.addEventListener("touchstart", (e) => { touchY = e.touches[0].clientY; }, { passive: true });
+  let touchStartTarget = null;
+  root.addEventListener(
+    "touchstart",
+    (e) => {
+      touchY = e.touches[0].clientY;
+      touchStartTarget = e.target;
+    },
+    { passive: true }
+  );
   root.addEventListener(
     "touchend",
     (e) => {
+      if (document.body.classList.contains("is-wardrobe-open")) return;
+      if (
+        touchStartTarget?.closest?.(
+          ".project-strip, .project-meta, .wardrobe, .chapter-rail, .qs1ber-radio, .project-viewer__yt-ui, button, a, input"
+        )
+      ) {
+        return;
+      }
       const dy = touchY - e.changedTouches[0].clientY;
-      if (Math.abs(dy) < 16) return;
+      if (Math.abs(dy) < 24) return;
       if (animating) return;
       goTo(current + (dy > 0 ? 1 : -1));
     },
@@ -391,10 +462,21 @@ function initScroll(state, scene) {
     });
   });
 
+  const onChapterRailActivate = (item) => {
+    const idx = chapterIndexFromId(Number(item.dataset.i));
+    if (idx >= 0) goTo(idx);
+  };
+
   document.getElementById("chapterRail")?.addEventListener("click", (e) => {
     const item = e.target.closest(".chapter-rail__item");
-    if (item) goTo(Number(item.dataset.i));
+    if (item) onChapterRailActivate(item);
   });
+
+  document.getElementById("chapterRail")?.addEventListener("pointerdown", (e) => {
+    const item = e.target.closest(".chapter-rail__item");
+    if (!item) return;
+    e.stopPropagation();
+  }, true);
 
   window.QS1BER.goToChapter = goTo;
   lockedTop = 0;
@@ -435,6 +517,7 @@ function init() {
   window.addEventListener("qs1ber:scene-ready", () => prefetchYoutubeApi(), { once: true });
 
   initScroll(window.QS1BER, scene);
+  initQs1berRadio();
   initWardrobe(scene);
 }
 

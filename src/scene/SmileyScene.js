@@ -7,11 +7,17 @@ import { BokehPass } from "three/addons/postprocessing/BokehPass.js";
 import { UnrealBloomPass } from "three/addons/postprocessing/UnrealBloomPass.js";
 import { TransformControls } from "three/addons/controls/TransformControls.js";
 import { damp, flowEase, snapBounce, elasticEaseOut, lerp, clamp, seededRandom, scrollEase } from "../utils/easing.js";
-import { getDecorBlend, getHeroBlend, smileyOverlayMode } from "./scrollVisuals.js";
-import { WARDROBE_ITEMS, wardrobeItemForNode } from "../../data/wardrobe.js";
+import { getDecorBlend, getHeroBlend, getHeroStackBlend, getPostFxBlend, isDecorChapter, isProjectChapter, smileyOverlayMode } from "./scrollVisuals.js";
+import { getProjects } from "../../data/projectsStore.js";
+import { WARDROBE_ITEMS, wardrobeItemForNode, hiddenWardrobeItemForNode } from "../../data/wardrobe.js";
 import { projects } from "../../data/projects.js";
 
 const LAST_PROJECT_CHAPTER = projects.length;
+const CONTACT_CHAPTER = LAST_PROJECT_CHAPTER + 1;
+/** Contact finale — smiley dead center, copy sits below in DOM */
+const CONTACT_NDC_X = 0;
+const CONTACT_NDC_Y = 0;
+const CONTACT_SCALE = 0.88;
 
 const PINK = 0xff3d9a;
 const MODEL_BASE = "assets/models";
@@ -133,12 +139,30 @@ const MOUTH_SAD = {
 const FACE_AXIS_FIX = new THREE.Euler(0, 0, 0);
 const SCROLL_MS = 620;
 
-/** Wardrobe fitting-room camera — closer, slight three-quarter angle on the head */
-const WARDROBE_CAMERA_POS = new THREE.Vector3(0.82, 0.22, 10.05);
-const WARDROBE_CAMERA_LOOK = new THREE.Vector3(0.38, 0.05, 0.16);
+/** Wardrobe fitting-room camera — frames the head in the open strip left of the panel */
+const WARDROBE_CAMERA_POS = new THREE.Vector3(0.02, 0.1, 10.28);
+const WARDROBE_CAMERA_LOOK = new THREE.Vector3(-0.12, -0.08, 0.18);
+const WARDROBE_CAMERA_POS_MOBILE = new THREE.Vector3(0, 0.12, 10.05);
+const WARDROBE_CAMERA_LOOK_MOBILE = new THREE.Vector3(0, -0.02, 0.18);
 const WARDROBE_BLEND_SPEED = 4.5;
+const WARDROBE_SCALE_MULT = 0.92;
+const WARDROBE_SCALE_MULT_MOBILE = 0.84;
+const WARDROBE_ANCHOR_Y = 0.58;
+const MOBILE_MAX_DPR = 1.5;
 
 export class SmileyScene {
+  static _detectMobileLayout() {
+    return window.matchMedia("(max-width: 900px), (pointer: coarse)").matches;
+  }
+
+  _refreshMobileLayout() {
+    this._isMobileLayout = SmileyScene._detectMobileLayout();
+  }
+
+  _maxDevicePixelRatio() {
+    return this._isMobileLayout ? MOBILE_MAX_DPR : 2;
+  }
+
   constructor(canvas, state) {
     this.canvas = canvas;
     this.state = state;
@@ -179,7 +203,6 @@ export class SmileyScene {
     this._tumbleQuat = new THREE.Quaternion();
     this._rollQuat = new THREE.Quaternion();
     this._eulerScratch = new THREE.Euler();
-    this._spawnPoint = new THREE.Vector3();
     this._spawnNdc = new THREE.Vector3();
     this._shapesSpawned = false;
     this.selectedEntry = null;
@@ -188,7 +211,6 @@ export class SmileyScene {
     this._lastSelectAt = 0;
     this._lastSelectEntry = null;
     this._rapidClickCount = 1;
-    this._spawnSeed = 9000;
     this._fromChapter = 0;
     this._toChapter = 0;
     this._wardrobeOpen = false;
@@ -203,6 +225,8 @@ export class SmileyScene {
     this.smileyEntry = null;
     this._lastBlendKey = -1;
     this._scrollPerfActive = false;
+    this._isMobileLayout = SmileyScene._detectMobileLayout();
+    this._mobileBloomStrength = 0.045;
 
     this._initRenderer();
     this._initScene();
@@ -225,7 +249,7 @@ export class SmileyScene {
       powerPreference: "high-performance",
     });
     this.renderer.setClearColor(0x000000, 0);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this._maxDevicePixelRatio()));
     this.renderer.setSize(window.innerWidth, window.innerHeight);
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.08;
@@ -250,9 +274,9 @@ export class SmileyScene {
       height: h,
     });
     this.composer.addPass(this.bokehPass);
-    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(w, h), 0.07, 0.38, 0.9);
+    this.bloomPass = new UnrealBloomPass(new THREE.Vector2(w, h), this._isMobileLayout ? this._mobileBloomStrength : 0.07, 0.38, 0.9);
     this.composer.addPass(this.bloomPass);
-    this._bloomStrength = 0.07;
+    this._bloomStrength = this._isMobileLayout ? this._mobileBloomStrength : 0.07;
   }
 
   _initScene() {
@@ -353,6 +377,7 @@ export class SmileyScene {
   _initTransformControls() {
     // Body — canvas is often pointer-events:none on project pages; gizmo needs global hits.
     this.transformControls = new TransformControls(this.camera, document.body);
+    this.transformControls.enabled = false;
     this.transformControls.setSize(1.05);
     this.transformControls.setSpace("world");
     this.transformControls.setMode("translate");
@@ -429,12 +454,12 @@ export class SmileyScene {
   /** Smiley rest position on the path (camera stays fixed at world origin view) */
   _getFollowAmount(chapter, scrollT) {
     if (scrollT >= 1) {
-      return chapter >= 1 ? 1 : 0;
+      return isProjectChapter(chapter) ? 1 : 0;
     }
 
     const from = this._fromChapter ?? chapter;
-    const fromCompanion = from >= 1;
-    const toCompanion = chapter >= 1;
+    const fromCompanion = isProjectChapter(from);
+    const toCompanion = isProjectChapter(chapter);
 
     if (fromCompanion === toCompanion) {
       return fromCompanion ? 1 : 0;
@@ -493,12 +518,12 @@ export class SmileyScene {
   }
 
   _ndcForChapter(chapter, heroX, heroY) {
-    if (chapter < 1) {
-      return { x: heroX, y: heroY };
+    if (chapter > LAST_PROJECT_CHAPTER) {
+      return { x: CONTACT_NDC_X, y: CONTACT_NDC_Y };
     }
 
-    if (chapter > LAST_PROJECT_CHAPTER) {
-      return this._ndcForChapter(LAST_PROJECT_CHAPTER, heroX, heroY);
+    if (chapter < 1) {
+      return { x: heroX, y: heroY };
     }
 
     const slot = this._companionSlot(chapter);
@@ -516,7 +541,10 @@ export class SmileyScene {
 
   _companionScaleForChapter(chapter) {
     if (chapter > LAST_PROJECT_CHAPTER) {
-      return this._companionScaleForChapter(LAST_PROJECT_CHAPTER);
+      return CONTACT_SCALE;
+    }
+    if (!isProjectChapter(chapter)) {
+      return FOLLOW_SCALE;
     }
     const slot = this._companionSlot(chapter);
     if (!slot) return FOLLOW_SCALE;
@@ -541,9 +569,42 @@ export class SmileyScene {
     return out;
   }
 
+  /** Screen anchor in the wardrobe preview zone — left strip on desktop, above sheet on mobile */
+  _wardrobeSlotNdc(out) {
+    const panel = document.getElementById("wardrobePanel");
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    if (!panel || !w || !h) return false;
+
+    const rect = panel.getBoundingClientRect();
+    if (rect.width < 8 || rect.height < 8) return false;
+
+    const mobileSheet = this._isMobileLayout || rect.top > h * 0.34;
+    if (mobileSheet) {
+      const previewH = Math.max(rect.top - 12, h * 0.28);
+      const cx = w * 0.5;
+      const cy = previewH * 0.46;
+      out.x = (cx / w) * 2 - 1;
+      out.y = 1 - (cy / h) * 2;
+      return true;
+    }
+
+    const pad = clamp(rect.left * 0.06, 12, 40);
+    const leftW = Math.max(rect.left - pad, w * 0.22);
+    const cx = leftW * 0.5;
+    const cy = h * WARDROBE_ANCHOR_Y;
+
+    out.x = (cx / w) * 2 - 1;
+    out.y = 1 - (cy / h) * 2;
+    return true;
+  }
+
   /** Interpolate smiley anchor in screen space — tracks live DOM slots while scrolling */
   _getSmileyAnchorNdc(chapter, scrollT, out) {
-    const companion = chapter >= 1 || this._fromChapter >= 1 || this._toChapter >= 1;
+    const companion =
+      isProjectChapter(chapter) ||
+      isProjectChapter(this._fromChapter ?? chapter) ||
+      isProjectChapter(this._toChapter ?? chapter);
 
     if (scrollT >= 1) {
       this._hasTransitionNdc = false;
@@ -551,17 +612,24 @@ export class SmileyScene {
       const target = this._ndcForChapter(chapter, hero.x, hero.y);
       out.x = target.x;
       out.y = target.y;
-      return this._clampSmileyNdc(out, companion);
+    } else {
+      const hero = this._heroNdc(this._tmpV3);
+      const fromCh = this._fromChapter ?? chapter;
+      const toCh = this._toChapter ?? chapter;
+      const from = this._ndcForChapter(fromCh, hero.x, hero.y);
+      const to = this._ndcForChapter(toCh, hero.x, hero.y);
+      out.x = lerp(from.x, to.x, scrollT);
+      out.y = lerp(from.y, to.y, scrollT);
     }
 
-    const hero = this._heroNdc(this._tmpV3);
-    const fromCh = this._fromChapter ?? chapter;
-    const toCh = this._toChapter ?? chapter;
-    const from = this._ndcForChapter(fromCh, hero.x, hero.y);
-    const to = this._ndcForChapter(toCh, hero.x, hero.y);
-    out.x = lerp(from.x, to.x, scrollT);
-    out.y = lerp(from.y, to.y, scrollT);
-    return this._clampSmileyNdc(out, companion);
+    this._clampSmileyNdc(out, companion);
+
+    const wb = this._wardrobeBlend ?? 0;
+    if (wb > 0.001 && this._wardrobeSlotNdc(this._tmpV3)) {
+      out.x = lerp(out.x, this._tmpV3.x, wb);
+      out.y = lerp(out.y, this._tmpV3.y, wb);
+    }
+    return out;
   }
 
   _getSmileyFollowDepth() {
@@ -646,8 +714,15 @@ export class SmileyScene {
 
     const heroBlend = getHeroBlend(fromChapter, toChapter, scrollT, true);
     const decorBlend = getDecorBlend(fromChapter, toChapter, scrollT, true);
+    const fxBlend = getPostFxBlend(fromChapter, toChapter, scrollT, true);
+    const stackBlend =
+      ((isProjectChapter(fromChapter) && isDecorChapter(toChapter)) ||
+        (fromChapter >= 1 && toChapter < 1)) &&
+      scrollT < 1
+        ? decorBlend
+        : heroBlend;
     const onOverlay = smileyOverlayMode(fromChapter, toChapter, scrollT);
-    const blendKey = Math.round(decorBlend * 40);
+    const blendKey = Math.round(decorBlend * 40) + Math.round(fxBlend * 40);
     if (
       blendKey === this._lastBlendKey &&
       onOverlay === this._overlayMode &&
@@ -658,7 +733,8 @@ export class SmileyScene {
     }
     this._lastBlendKey = blendKey;
 
-    this._heroBlend = heroBlend;
+    this._heroBlend = stackBlend;
+    this._fxBlend = fxBlend;
     this._decorBlend = decorBlend;
     this._overlayMode = onOverlay;
     this._scrollFrom = fromChapter;
@@ -675,9 +751,7 @@ export class SmileyScene {
 
     this._applySmileyCompanionMaterial(onOverlay);
 
-    const fxBlend =
-      fromChapter < 1 && toChapter >= 1 && scrollT < 1 ? decorBlend : heroBlend;
-    const useFx = fxBlend > 0.001 && !onOverlay;
+    const useFx = fxBlend > 0.001;
     if (this.bokehPass) {
       this.bokehPass.enabled = useFx;
       if (this.bokehPass.uniforms?.aperture) {
@@ -710,7 +784,7 @@ export class SmileyScene {
     this._scrollPerfActive = false;
     const w = window.innerWidth;
     const h = window.innerHeight;
-    const dpr = this._savedDpr ?? Math.min(window.devicePixelRatio, 2);
+    const dpr = this._savedDpr ?? Math.min(window.devicePixelRatio, this._maxDevicePixelRatio());
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(w, h);
     this.composer?.setSize(w, h);
@@ -1044,6 +1118,13 @@ export class SmileyScene {
         const n = rawName.toLowerCase();
         const parentName = child.parent?.name || "";
         const wardrobeItem = wardrobeItemForNode(child);
+        const hiddenItem = wardrobeItem ? null : hiddenWardrobeItemForNode(child);
+
+        if (hiddenItem) {
+          child.visible = false;
+          child.frustumCulled = false;
+          return;
+        }
 
         if (wardrobeItem) {
           this._applyWardrobeMaterial(child, wardrobeItem.id, rawName);
@@ -1153,22 +1234,6 @@ export class SmileyScene {
       metalnessMap: await this._loadTex(texLoader, `${WARDROBE_TEX}/cowboy hat/images/cowboy_1001_Metalness.jpg`, THREE.NoColorSpace),
       envMap: env,
     };
-
-    const seniorBase = `${WARDROBE_TEX}/hat senior/textures`;
-    const seniorColor = await this._loadTex(texLoader, `${seniorBase}/hat1_Base_color.png`);
-    const seniorNormal = await this._loadTex(texLoader, `${seniorBase}/hat1_Normal_OpenGL.png`, THREE.NoColorSpace);
-    const seniorRough = await this._loadTex(texLoader, `${seniorBase}/hat1_Roughness3.png`, THREE.NoColorSpace);
-    const seniorMetal = await this._loadTex(texLoader, `${seniorBase}/hat1_Metallic.png`, THREE.NoColorSpace);
-    const seniorAo = await this._loadTex(texLoader, `${seniorBase}/hat1_Mixed_AO.png`, THREE.NoColorSpace);
-    this._wardrobeTex["ht-senior"] = {
-      map: seniorColor,
-      normalMap: seniorNormal,
-      roughnessMap: seniorRough,
-      metalnessMap: seniorMetal,
-      aoMap: seniorAo,
-      aoMapIntensity: 1,
-      envMap: env,
-    };
   }
 
   _makeWardrobeMaterial(maps, { transparent = false, transmission = 0 } = {}) {
@@ -1186,21 +1251,72 @@ export class SmileyScene {
       envMapIntensity: 1.1,
       transparent,
       transmission,
+      opacity: transparent ? 0.92 : 1,
+      depthWrite: true,
+    });
+  }
+
+  _makeWardrobeFallbackMaterial() {
+    return new THREE.MeshPhysicalMaterial({
+      color: 0x2b2b31,
+      metalness: 0.35,
+      roughness: 0.4,
+      envMap: this.scene.environment,
+      envMapIntensity: 1,
+      transparent: false,
+      transmission: 0,
+      opacity: 1,
+      depthWrite: true,
     });
   }
 
   _applyWardrobeMaterial(mesh, itemId, rawName) {
+    if (itemId === "ht-headphones") {
+      this._applyFbxWardrobeMaterial(mesh);
+      return;
+    }
+
     let maps = this._wardrobeTex[itemId];
     if (itemId === "gl-mlg") {
       const part = rawName.match(/Glasses_(\w+)_/i)?.[1] || "Glass";
       maps = this._wardrobeTex[`gl-mlg-${part}`] || this._wardrobeTex["gl-mlg-Glass"];
     }
-    if (!maps) return;
+    if (!maps) {
+      this._applyFbxWardrobeMaterial(mesh);
+      return;
+    }
     const isGlassLens = itemId === "gl-mlg" && /glass/i.test(rawName);
     mesh.material = this._makeWardrobeMaterial(maps, {
       transparent: isGlassLens,
       transmission: isGlassLens ? 0.35 : 0,
     });
+  }
+
+  _applyFbxWardrobeMaterial(mesh) {
+    const apply = (mat) => {
+      const next = mat.clone();
+      next.transparent = false;
+      next.opacity = 1;
+      next.transmission = 0;
+      if ("thickness" in next) next.thickness = 0;
+      next.depthWrite = true;
+      next.depthTest = true;
+      next.side = THREE.FrontSide;
+      if (this.scene.environment) {
+        next.envMap = this.scene.environment;
+        next.envMapIntensity = Math.max(next.envMapIntensity ?? 0, 1.05);
+      }
+      next.needsUpdate = true;
+      return next;
+    };
+
+    if (mesh.material) {
+      mesh.material = Array.isArray(mesh.material)
+        ? mesh.material.map(apply)
+        : apply(mesh.material);
+    } else {
+      mesh.material = this._makeWardrobeFallbackMaterial();
+    }
   }
 
   _setWardrobeItemVisible(itemId, visible) {
@@ -1371,7 +1487,7 @@ export class SmileyScene {
     if (!target || target === this.canvas) return false;
     if (
       target.closest(
-        "a, button, input, textarea, select, label, .chapter-rail, .project-strip, .project-strip__item, .project-viewer, .project-viewer__stage, .project-viewer__nav, .project-viewer__yt-ui, .contact__links, .wardrobe, .wardrobe-toggle, #wardrobeToggle, #wardrobePanel"
+        "a, button, input, textarea, select, label, .hero__links, .hero__link, .chapter-rail, .project-strip, .project-strip__item, .project-viewer, .project-viewer__stage, .project-viewer__nav, .project-viewer__yt-ui, .contact__top, .contact__bottom, .contact__lines, .contact__social, .wardrobe, .wardrobe-toggle, .qs1ber-radio, #wardrobeToggle, #wardrobePanel, #qs1berRadio"
       )
     ) {
       return true;
@@ -1385,67 +1501,6 @@ export class SmileyScene {
   _showEditHint(show) {
     const el = document.getElementById("editHint");
     if (el) el.hidden = !show;
-  }
-
-  /** World point under cursor on the focal plane (same depth slice as the hero) */
-  _pickWorldPoint(clientX, clientY, out) {
-    const rect = this.canvas.getBoundingClientRect();
-    const w = rect.width || window.innerWidth;
-    const h = rect.height || window.innerHeight;
-    const nx = ((clientX - rect.left) / w) * 2 - 1;
-    const ny = -((clientY - rect.top) / h) * 2 + 1;
-    this.raycaster.setFromCamera({ x: nx, y: ny }, this.camera);
-
-    this.camera.getWorldDirection(this._tmpV3);
-    if (this.smileyPivot) {
-      this.smileyPivot.getWorldPosition(this._tmpV2);
-    } else {
-      this._tmpV2.copy(this._cameraLook);
-    }
-
-    const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(this._tmpV3, this._tmpV2);
-    if (this.raycaster.ray.intersectPlane(plane, out)) {
-      return true;
-    }
-
-    const depth = this.camera.position.distanceTo(this._tmpV2);
-    const ndc = this._spawnNdc.set(nx, ny, 0.5).unproject(this.camera);
-    ndc.sub(this.camera.position).normalize();
-    out.copy(this.camera.position).addScaledVector(ndc, depth);
-    return true;
-  }
-
-  _spawnShapeAt(worldPos) {
-    const pos = this._spawnPoint.copy(worldPos);
-    const type = SPAWN_TYPES[this._spawnSeed % SPAWN_TYPES.length];
-    this._spawnSeed += 17;
-    const scale = 0.72 + (this._spawnSeed % 100) * 0.004;
-    const entry = this._makePrimitive(type, this._spawnSeed, scale);
-    entry.isAmbient = true;
-    entry.userPlaced = true;
-    entry.pathT = -1;
-    entry.depthOffset = 0;
-    entry.anchor.copy(pos);
-    entry.mesh.position.copy(pos);
-    entry.mesh.quaternion.identity();
-    entry.mesh.scale.setScalar(0);
-    entry.mesh.visible = true;
-    entry.spawnAnim = { t: 0, dur: 0.62 };
-    this.decorRoot.add(entry.mesh);
-    this.shapes.push(entry);
-    this._selectEntry(entry, "translate");
-    return entry;
-  }
-
-  _updateSpawnAnim(s, dt) {
-    if (!s.spawnAnim) return;
-    s.spawnAnim.t += dt;
-    const u = clamp(s.spawnAnim.t / s.spawnAnim.dur, 0, 1);
-    s.mesh.scale.setScalar(s.baseScale * snapBounce(u));
-    if (u >= 1) {
-      s.spawnAnim = null;
-      s.mesh.scale.setScalar(s.baseScale);
-    }
   }
 
   _clientToNdc(clientX, clientY, out = { x: 0, y: 0 }) {
@@ -1512,6 +1567,7 @@ export class SmileyScene {
 
   _selectEntry(entry, mode = "translate") {
     this.selectedEntry = entry;
+    this.transformControls.enabled = true;
     const target = entry.isSmiley ? this.smileyPivot : entry.mesh;
     this.transformControls.setMode(mode);
     this.transformControls.attach(target);
@@ -1527,6 +1583,7 @@ export class SmileyScene {
 
   _deselectEntry() {
     this.transformControls.detach();
+    this.transformControls.enabled = false;
     this.selectedEntry = null;
     this._showEditHint(false);
   }
@@ -1580,10 +1637,14 @@ export class SmileyScene {
   }
 
   _onResize() {
+    this._refreshMobileLayout();
     const w = window.innerWidth;
     const h = window.innerHeight;
     this.camera.aspect = w / h;
     this.camera.updateProjectionMatrix();
+    if (!this._scrollPerfActive) {
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this._maxDevicePixelRatio()));
+    }
     this.renderer.setSize(w, h);
     this.composer?.setSize(w, h);
     this.bloomPass?.setSize(w, h);
@@ -1680,14 +1741,8 @@ export class SmileyScene {
       return;
     }
 
-    if (!this.transformControls.axis) {
-      const cx = this._pointerDownAt.x;
-      const cy = this._pointerDownAt.y;
-      if (this._pickWorldPoint(cx, cy, this._spawnPoint)) {
-        this._spawnShapeAt(this._spawnPoint);
-      } else {
-        this._deselectEntry();
-      }
+    if (!this.transformControls.axis && this.selectedEntry) {
+      this._deselectEntry();
     }
     this._pointerDownAt = null;
   }
@@ -1856,7 +1911,6 @@ export class SmileyScene {
   }
 
   _animateShapeIdle(s, dt, time) {
-    if (s.spawnAnim) return;
     if (s.anchor.lengthSq() < 1e-6) {
       s.anchor.copy(s.mesh.position);
     }
@@ -1942,7 +1996,7 @@ export class SmileyScene {
     const toCh = this._toChapter ?? chapter;
     let companionScale = FOLLOW_SCALE;
     if (followAmount > 0) {
-      if (fromCh >= 1 && toCh >= 1 && scrollT < 1) {
+      if (isProjectChapter(fromCh) && isProjectChapter(toCh) && scrollT < 1) {
         companionScale = lerp(
           this._companionScaleForChapter(fromCh),
           this._companionScaleForChapter(toCh),
@@ -1952,7 +2006,10 @@ export class SmileyScene {
         companionScale = this._companionScaleForChapter(scrollT >= 1 ? chapter : toCh);
       }
     }
-    const scaleMult = lerp(1, companionScale, followAmount);
+    let scaleMult = lerp(1, companionScale, followAmount);
+    const wb = this._wardrobeBlend ?? 0;
+    const wardrobeScale = this._isMobileLayout ? WARDROBE_SCALE_MULT_MOBILE : WARDROBE_SCALE_MULT;
+    scaleMult *= lerp(1, wardrobeScale, wb);
     const smileyEdit =
       this.selectedEntry?.isSmiley &&
       (this._gizmoDragging ||
@@ -2020,8 +2077,10 @@ export class SmileyScene {
 
     const basePos = new THREE.Vector3(0.35, 0.05, 12.2);
     const baseLook = new THREE.Vector3(0.45, -0.08, 0.2);
-    const targetPos = basePos.clone().lerp(WARDROBE_CAMERA_POS, wb);
-    const targetLook = baseLook.clone().lerp(WARDROBE_CAMERA_LOOK, wb);
+    const wardrobePos = this._isMobileLayout ? WARDROBE_CAMERA_POS_MOBILE : WARDROBE_CAMERA_POS;
+    const wardrobeLook = this._isMobileLayout ? WARDROBE_CAMERA_LOOK_MOBILE : WARDROBE_CAMERA_LOOK;
+    const targetPos = basePos.clone().lerp(wardrobePos, wb);
+    const targetLook = baseLook.clone().lerp(wardrobeLook, wb);
 
     const parallaxScale = 1 - wb * 0.88;
     const parallaxX = this.pointer.active ? this.pointer.nx * 0.04 * parallaxScale : 0;
@@ -2069,13 +2128,25 @@ export class SmileyScene {
       return;
     }
 
+    const returningDecor =
+      (isProjectChapter(this._fromChapter) && isDecorChapter(this._toChapter) && this.state.chapterT < 1) ||
+      (this._fromChapter >= 1 && this._toChapter < 1 && this.state.chapterT < 1);
+
     const useLite =
-      this.state.snapLock && this._overlayMode && this.state.chapterT >= 0.35;
+      this.state.snapLock &&
+      this._overlayMode &&
+      this.state.chapterT >= 0.35 &&
+      !returningDecor;
 
     if (this._overlayMode) {
       this.scene.background = null;
       this.renderer.setClearColor(0x000000, 0);
-    } else if (this._heroBlend > 0.001) {
+    } else if (
+      returningDecor ||
+      this._heroBlend > 0.02 ||
+      ((this.state.chapterIndex < 1 || this.state.chapterIndex === CONTACT_CHAPTER) &&
+        this.state.chapterT >= 1)
+    ) {
       this._prepareDecorBackground();
     } else {
       this.scene.background = null;
@@ -2102,14 +2173,16 @@ export class SmileyScene {
 
     if (!this.introDone) {
       this._updateIntro(dt);
-    } else if (this._heroBlend > 0.02 && !this.state.snapLock) {
-      for (const s of this.shapes) {
+    } else if (this._decorBlend > 0.02) {
+      const decorDuringScroll =
+        !this.state.snapLock ||
+        (this._fromChapter >= 1 && this._toChapter < 1 && this.state.chapterT < 1) ||
+        (isProjectChapter(this._fromChapter) &&
+          isDecorChapter(this._toChapter) &&
+          this.state.chapterT < 1);
+      if (decorDuringScroll) {
+        for (const s of this.shapes) {
         if (!s.mesh.visible) continue;
-
-        if (s.spawnAnim) {
-          this._updateSpawnAnim(s, dt);
-          continue;
-        }
 
         const pauseMotion = this._shouldPauseIdleMotion(s);
 
@@ -2129,6 +2202,7 @@ export class SmileyScene {
           this._animateShapeOnPath(s, s.pathT, dt, t);
         }
         s.mesh.scale.setScalar(s.baseScale);
+        }
       }
     }
 
