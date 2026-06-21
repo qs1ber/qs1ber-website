@@ -1,12 +1,12 @@
-import { BUILD } from "./version.js?b=20260624a";
-import { getProjects } from "../data/projectsStore.js?b=20260624a";
-import { SmileyScene } from "./scene/SmileyScene.js?b=20260624a";
-import { initProjectViewers, ensureProjectViewer, pauseAllProjectMedia, renderProjectPalette, getProjectMedia } from "./ui/projectViewer.js?b=20260624a";
-import { initWardrobe } from "./ui/wardrobe.js?b=20260624a";
-import { initQs1berRadio } from "./ui/qs1berRadio.js?b=20260624a";
-import { flowEase, scrollEase } from "./utils/easing.js?b=20260624a";
-import { getYoutubeId, youtubeThumbUrl, loadYoutubeApi } from "./utils/youtube.js?b=20260624a";
-import { getHeroStackBlend, isProjectChapter, smileyOverlayMode } from "./scene/scrollVisuals.js?b=20260624a";
+import { BUILD } from "./version.js?b=20260624b";
+import { getProjects } from "../data/projectsStore.js?b=20260624b";
+import { SmileyScene } from "./scene/SmileyScene.js?b=20260624b";
+import { initProjectViewers, ensureProjectViewer, pauseAllProjectMedia, renderProjectPalette, getProjectMedia } from "./ui/projectViewer.js?b=20260624b";
+import { initWardrobe } from "./ui/wardrobe.js?b=20260624b";
+import { initQs1berRadio } from "./ui/qs1berRadio.js?b=20260624b";
+import { flowEase, scrollEase } from "./utils/easing.js?b=20260624b";
+import { getYoutubeId, youtubeThumbUrl, loadYoutubeApi } from "./utils/youtube.js?b=20260624b";
+import { getHeroStackBlend, isProjectChapter, smileyOverlayMode } from "./scene/scrollVisuals.js?b=20260624b";
 
 console.info(`[qs1ber] build ${BUILD}`);
 

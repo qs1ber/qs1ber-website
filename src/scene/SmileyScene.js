@@ -472,6 +472,12 @@ export class SmileyScene {
     return 1 - scrollT;
   }
 
+  /** Mobile — no smiley on project chapters (video + copy only) */
+  _shouldHideSmiley(chapter, scrollT) {
+    if (!this._isMobileLayout) return false;
+    return this._getFollowAmount(chapter, scrollT) > 0.12;
+  }
+
   _cacheTransitionNdc(fromCh, toCh) {
     const hero = this._heroNdc(this._anchorNdc);
     const from = this._ndcForChapter(fromCh, hero.x, hero.y);
@@ -1052,6 +1058,10 @@ export class SmileyScene {
 
   _ensureSmileyVisible() {
     if (!this.smileyPivot || !this.introDone) return;
+    if (this._shouldHideSmiley(this.state.chapterIndex, this.state.chapterT ?? 1)) {
+      this.smileyPivot.visible = false;
+      return;
+    }
     this.smileyPivot.visible = true;
   }
 
@@ -1987,10 +1997,17 @@ export class SmileyScene {
 
   _updateSmileyLook(dt) {
     if (!this.smileyPivot) return;
-    this._ensureSmileyVisible();
 
     const chapter = this.state.chapterIndex;
-    const scrollT = this.state.chapterT;
+    const scrollT = this.state.chapterT ?? 1;
+
+    if (this._shouldHideSmiley(chapter, scrollT)) {
+      this.smileyPivot.visible = false;
+      return;
+    }
+
+    this._ensureSmileyVisible();
+
     const followAmount = this._getFollowAmount(chapter, scrollT);
     const fromCh = this._fromChapter ?? chapter;
     const toCh = this._toChapter ?? chapter;
