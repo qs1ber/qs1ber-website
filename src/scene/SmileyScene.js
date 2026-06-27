@@ -1083,28 +1083,19 @@ export class SmileyScene {
     const loader = new FBXLoader();
     const texLoader = new THREE.TextureLoader();
 
-    const maps = {
-      face: await this._loadTex(texLoader, `${MODEL_BASE}/1_diffuseOriginal.webp`),
-      side: await this._loadTex(texLoader, `${MODEL_BASE}/side_1_diffuseOriginal.webp`),
-      normal: await this._loadTex(texLoader, `${MODEL_BASE}/1_normal.webp`, THREE.NoColorSpace),
-      roughness: await this._loadTex(texLoader, `${MODEL_BASE}/1_metallic.webp`, THREE.NoColorSpace),
-      ao: await this._loadTex(texLoader, `${MODEL_BASE}/1_ao.webp`, THREE.NoColorSpace),
-    };
-    this._applySmileyPinkMaterial(maps);
+    const faceMap = await this._loadTex(texLoader, `${MODEL_BASE}/1_diffuseOriginal.webp`);
+    const sideMap = await this._loadTex(texLoader, `${MODEL_BASE}/side_1_diffuseOriginal.webp`);
+    this._applySmileyPinkMaterial({ side: sideMap });
 
     const sideMat = this.glassMaterial;
 
     const faceMat = new THREE.MeshPhysicalMaterial({
-      map: maps.face,
-      normalMap: this._isMobileLayout ? null : maps.normal,
-      roughnessMap: maps.roughness,
-      aoMap: this._isMobileLayout ? null : maps.ao,
-      aoMapIntensity: 1,
+      map: faceMap,
       metalness: 0.05,
-      roughness: 0.14,
-      clearcoat: 0.9,
-      clearcoatRoughness: 0.05,
-      envMapIntensity: 1.2,
+      roughness: 0.18,
+      clearcoat: 0.85,
+      clearcoatRoughness: 0.06,
+      envMapIntensity: 1.15,
       envMap: this.scene.environment,
     });
     this.smileyFaceMat = faceMat;
@@ -1243,42 +1234,28 @@ export class SmileyScene {
 
   async _loadWardrobeTextures(texLoader) {
     const env = this.scene.environment;
-    const loadPBR = async (base, prefix) => {
+    const loadColor = async (base, prefix) => {
       const map = await this._loadTex(texLoader, `${base}/${prefix}_BaseColor.webp`);
-      const normalMap = await this._loadTex(texLoader, `${base}/${prefix}_Normal.webp`, THREE.NoColorSpace);
-      const roughnessMap = await this._loadTex(texLoader, `${base}/${prefix}_Roughness.webp`, THREE.NoColorSpace);
-      const metalnessMap = await this._loadTex(texLoader, `${base}/${prefix}_Metallic.webp`, THREE.NoColorSpace);
-      return { map, normalMap, roughnessMap, metalnessMap, envMap: env };
+      return { map, envMap: env };
     };
 
     const mlgBase = `${WARDROBE_TEX}/mlg glasses/images`;
     for (const part of ["Glass", "Clips", "Mid"]) {
       const prefix = `Deal with it sunglasses_${part}`;
-      this._wardrobeTex[`gl-mlg-${part}`] = await loadPBR(mlgBase, prefix);
+      this._wardrobeTex[`gl-mlg-${part}`] = await loadColor(mlgBase, prefix);
     }
 
     const cowboyBase = `${WARDROBE_TEX}/cowboy hat/images`;
-    this._wardrobeTex["ht-cowboy"] = {
-      map: await this._loadTex(texLoader, `${cowboyBase}/cowboy_1001_BaseColor.webp`),
-      normalMap: await this._loadTex(texLoader, `${cowboyBase}/cowboy_1001_Normal.webp`, THREE.NoColorSpace),
-      roughnessMap: await this._loadTex(texLoader, `${cowboyBase}/cowboy_1001_Roughness.webp`, THREE.NoColorSpace),
-      metalnessMap: await this._loadTex(texLoader, `${cowboyBase}/cowboy_1001_Metalness.webp`, THREE.NoColorSpace),
-      envMap: env,
-    };
+    this._wardrobeTex["ht-cowboy"] = await loadColor(cowboyBase, "cowboy_1001");
   }
 
   _makeWardrobeMaterial(maps, { transparent = false, transmission = 0 } = {}) {
     return new THREE.MeshPhysicalMaterial({
       map: maps.map ?? null,
-      normalMap: maps.normalMap ?? null,
-      roughnessMap: maps.roughnessMap ?? null,
-      metalnessMap: maps.metalnessMap ?? null,
-      aoMap: maps.aoMap ?? null,
-      aoMapIntensity: maps.aoMapIntensity ?? 1,
       envMap: maps.envMap ?? null,
       color: 0xffffff,
-      metalness: 0.08,
-      roughness: 0.45,
+      metalness: 0.1,
+      roughness: 0.42,
       envMapIntensity: 1.1,
       transparent,
       transmission,
