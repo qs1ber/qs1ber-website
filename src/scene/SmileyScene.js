@@ -23,6 +23,8 @@ const PINK = 0xff3d9a;
 const MODEL_BASE = "assets/models";
 const SMILEY_FBX = "assets/cube5.fbx";
 const WARDROBE_TEX = "assets/wardrobe";
+const TEX_ANISO_DESKTOP = 4;
+const TEX_ANISO_MOBILE = 2;
 
 /** 100mm full-frame equivalent (24mm sensor height) */
 const FOCAL_LENGTH_MM = 100;
@@ -219,6 +221,7 @@ export class SmileyScene {
     this._accessorySlots = { glasses: null, hats: null };
     this._eyeClickBlocked = false;
     this._wardrobeTex = {};
+    this._wardrobeTexPromise = null;
     this._transitionFrom = { x: 0, y: 0 };
     this._transitionTo = { x: 0, y: 0 };
     this._hasTransitionNdc = false;
@@ -1072,31 +1075,30 @@ export class SmileyScene {
     }
   }
 
+  _texAnisotropy() {
+    return this._isMobileLayout ? TEX_ANISO_MOBILE : TEX_ANISO_DESKTOP;
+  }
+
   async _loadSmiley() {
     const loader = new FBXLoader();
     const texLoader = new THREE.TextureLoader();
 
     const maps = {
-      face: texLoader.load(`${MODEL_BASE}/1_diffuseOriginal.png`),
-      side: texLoader.load(`${MODEL_BASE}/side_1_diffuseOriginal.png`),
-      normal: texLoader.load(`${MODEL_BASE}/1_normal.png`),
-      roughness: texLoader.load(`${MODEL_BASE}/1_metallic.png`),
-      ao: texLoader.load(`${MODEL_BASE}/1_ao.png`),
+      face: await this._loadTex(texLoader, `${MODEL_BASE}/1_diffuseOriginal.webp`),
+      side: await this._loadTex(texLoader, `${MODEL_BASE}/side_1_diffuseOriginal.webp`),
+      normal: await this._loadTex(texLoader, `${MODEL_BASE}/1_normal.webp`, THREE.NoColorSpace),
+      roughness: await this._loadTex(texLoader, `${MODEL_BASE}/1_metallic.webp`, THREE.NoColorSpace),
+      ao: await this._loadTex(texLoader, `${MODEL_BASE}/1_ao.webp`, THREE.NoColorSpace),
     };
-    Object.values(maps).forEach((t) => {
-      t.colorSpace = THREE.SRGBColorSpace;
-      t.anisotropy = 8;
-    });
-    maps.normal.colorSpace = THREE.NoColorSpace;
     this._applySmileyPinkMaterial(maps);
 
     const sideMat = this.glassMaterial;
 
     const faceMat = new THREE.MeshPhysicalMaterial({
       map: maps.face,
-      normalMap: maps.normal,
+      normalMap: this._isMobileLayout ? null : maps.normal,
       roughnessMap: maps.roughness,
-      aoMap: maps.ao,
+      aoMap: this._isMobileLayout ? null : maps.ao,
       aoMapIntensity: 1,
       metalness: 0.05,
       roughness: 0.14,
@@ -1115,7 +1117,6 @@ export class SmileyScene {
 
     this._createSmileyPivot();
     this._wardrobeMeshes = Object.fromEntries(WARDROBE_ITEMS.map((item) => [item.id, []]));
-    await this._loadWardrobeTextures(texLoader);
 
     const modelScale = MODEL_SCALE * SMILEY_SCALE_MULT;
 
@@ -1212,7 +1213,7 @@ export class SmileyScene {
         this._texUrl(url),
         (tex) => {
           tex.colorSpace = colorSpace;
-          tex.anisotropy = 8;
+          tex.anisotropy = this._texAnisotropy();
           resolve(tex);
         },
         undefined,
@@ -1221,13 +1222,32 @@ export class SmileyScene {
     });
   }
 
+  async _ensureWardrobeTextures() {
+    if (this._wardrobeTexPromise) return this._wardrobeTexPromise;
+    const texLoader = new THREE.TextureLoader();
+    this._wardrobeTexPromise = this._loadWardrobeTextures(texLoader).then(() => {
+      this._refreshWardrobeMaterials();
+    });
+    return this._wardrobeTexPromise;
+  }
+
+  _refreshWardrobeMaterials() {
+    for (const item of WARDROBE_ITEMS) {
+      const meshes = this._wardrobeMeshes[item.id];
+      if (!meshes?.length) continue;
+      for (const mesh of meshes) {
+        this._applyWardrobeMaterial(mesh, item.id, mesh.name || "");
+      }
+    }
+  }
+
   async _loadWardrobeTextures(texLoader) {
     const env = this.scene.environment;
-    const loadPBR = async (base, prefix, ext = "png") => {
-      const map = await this._loadTex(texLoader, `${base}/${prefix}_BaseColor.${ext}`);
-      const normalMap = await this._loadTex(texLoader, `${base}/${prefix}_Normal.${ext}`, THREE.NoColorSpace);
-      const roughnessMap = await this._loadTex(texLoader, `${base}/${prefix}_Roughness.${ext}`, THREE.NoColorSpace);
-      const metalnessMap = await this._loadTex(texLoader, `${base}/${prefix}_Metallic.${ext}`, THREE.NoColorSpace);
+    const loadPBR = async (base, prefix) => {
+      const map = await this._loadTex(texLoader, `${base}/${prefix}_BaseColor.webp`);
+      const normalMap = await this._loadTex(texLoader, `${base}/${prefix}_Normal.webp`, THREE.NoColorSpace);
+      const roughnessMap = await this._loadTex(texLoader, `${base}/${prefix}_Roughness.webp`, THREE.NoColorSpace);
+      const metalnessMap = await this._loadTex(texLoader, `${base}/${prefix}_Metallic.webp`, THREE.NoColorSpace);
       return { map, normalMap, roughnessMap, metalnessMap, envMap: env };
     };
 
@@ -1237,11 +1257,12 @@ export class SmileyScene {
       this._wardrobeTex[`gl-mlg-${part}`] = await loadPBR(mlgBase, prefix);
     }
 
+    const cowboyBase = `${WARDROBE_TEX}/cowboy hat/images`;
     this._wardrobeTex["ht-cowboy"] = {
-      map: await this._loadTex(texLoader, `${WARDROBE_TEX}/cowboy hat/images/cowboy_1001_BaseColor.jpg`),
-      normalMap: await this._loadTex(texLoader, `${WARDROBE_TEX}/cowboy hat/images/cowboy_1001_Normal.jpg`, THREE.NoColorSpace),
-      roughnessMap: await this._loadTex(texLoader, `${WARDROBE_TEX}/cowboy hat/images/cowboy_1001_Roughness.jpg`, THREE.NoColorSpace),
-      metalnessMap: await this._loadTex(texLoader, `${WARDROBE_TEX}/cowboy hat/images/cowboy_1001_Metalness.jpg`, THREE.NoColorSpace),
+      map: await this._loadTex(texLoader, `${cowboyBase}/cowboy_1001_BaseColor.webp`),
+      normalMap: await this._loadTex(texLoader, `${cowboyBase}/cowboy_1001_Normal.webp`, THREE.NoColorSpace),
+      roughnessMap: await this._loadTex(texLoader, `${cowboyBase}/cowboy_1001_Roughness.webp`, THREE.NoColorSpace),
+      metalnessMap: await this._loadTex(texLoader, `${cowboyBase}/cowboy_1001_Metalness.webp`, THREE.NoColorSpace),
       envMap: env,
     };
   }
@@ -2128,6 +2149,9 @@ export class SmileyScene {
 
   setWardrobeOpen(open) {
     this._wardrobeOpen = !!open;
+    if (open) {
+      void this._ensureWardrobeTextures();
+    }
     if (!open && this.decorMaterial && this._decorBlend != null) {
       this.decorMaterial.opacity = this._decorBlend;
     }
