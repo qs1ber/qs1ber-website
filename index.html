@@ -16,7 +16,17 @@
     <link rel="preconnect" href="https://use.typekit.net" />
     <link rel="stylesheet" href="https://use.typekit.net/iev3vzn.css" />
 
-    <link rel="stylesheet" href="styles/main.css?b=20260624d" />
+    <link rel="stylesheet" href="styles/main.css?b=20260624e" />
+
+    <script>
+      (function () {
+        try {
+          if (window.matchMedia("(max-width: 900px), (pointer: coarse)").matches) {
+            document.documentElement.classList.add("is-mobile-lite");
+          }
+        } catch (e) {}
+      })();
+    </script>
 
     <script>
       window.__setWardrobeOpen = function (open) {
@@ -219,7 +229,7 @@
             </nav>
           </div>
         </div>
-        <p class="hero__scroll-hint">Scroll — the smiley follows you ↓</p>
+        <p class="hero__scroll-hint">Scroll ↓</p>
       </section>
 
       <!-- PROJECTS (injected by main.js) -->
@@ -365,6 +375,6 @@
       aria-hidden="true"
     ></iframe>
 
-    <script type="module" src="src/main.js?b=20260624d"></script>
+    <script type="module" src="src/main.js?b=20260624e"></script>
   </body>
 </html>

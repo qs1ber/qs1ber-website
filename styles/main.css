@@ -1942,3 +1942,75 @@ body.is-revealing .chapter-rail {
     max-height: min(28dvh, 200px);
   }
 }
+
+/* ---------- Mobile lite: no WebGL — text + video only ---------- */
+html.is-mobile-lite,
+body.is-mobile-lite {
+  touch-action: pan-y;
+}
+
+html.is-mobile-lite #bgCanvas,
+body.is-mobile-lite #bgCanvas,
+html.is-mobile-lite .wardrobe-toggle,
+html.is-mobile-lite .wardrobe,
+html.is-mobile-lite .edit-hint,
+html.is-mobile-lite .sc-radio-widget,
+html.is-mobile-lite .project-meta__companion {
+  display: none !important;
+}
+
+html.is-mobile-lite #scrollRoot {
+  scroll-snap-type: y proximity;
+  scroll-behavior: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+}
+
+html.is-mobile-lite .section,
+html.is-mobile-lite .project-panel {
+  scroll-snap-align: start;
+}
+
+html.is-mobile-lite .hero {
+  align-items: center;
+  justify-content: flex-start;
+  padding-top: calc(clamp(40px, 8vh, 72px) + var(--safe-top));
+}
+
+html.is-mobile-lite .hero__copy {
+  max-width: 100%;
+}
+
+html.is-mobile-lite .hero__scroll-hint {
+  content: none;
+}
+
+html.is-mobile-lite .hero__scroll-hint {
+  letter-spacing: 0.1em;
+}
+
+html.is-mobile-lite .project-panel__layout {
+  grid-template-rows: minmax(0, 1.15fr) auto minmax(0, auto);
+}
+
+html.is-mobile-lite .project-meta {
+  max-height: none;
+  overflow: visible;
+  grid-template-columns: 1fr;
+}
+
+html.is-mobile-lite .project-viewer__stage {
+  min-height: min(48dvh, 360px);
+}
+
+html.is-mobile-lite .contact__stage {
+  min-height: 12vh;
+}
+
+html.is-mobile-lite #siteBg {
+  opacity: 1;
+}
+
+html.is-mobile-lite body.is-canvas-front #bgCanvas {
+  display: none !important;
+}

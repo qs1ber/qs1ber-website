@@ -1,12 +1,11 @@
-import { BUILD } from "./version.js?b=20260624d";
-import { getProjects } from "../data/projectsStore.js?b=20260624d";
-import { SmileyScene } from "./scene/SmileyScene.js?b=20260624d";
-import { initProjectViewers, ensureProjectViewer, pauseAllProjectMedia, renderProjectPalette, getProjectMedia } from "./ui/projectViewer.js?b=20260624d";
-import { initWardrobe } from "./ui/wardrobe.js?b=20260624d";
-import { initQs1berRadio } from "./ui/qs1berRadio.js?b=20260624d";
-import { flowEase, scrollEase } from "./utils/easing.js?b=20260624d";
-import { getYoutubeId, youtubeThumbUrl, loadYoutubeApi } from "./utils/youtube.js?b=20260624d";
-import { getHeroStackBlend, isProjectChapter, smileyOverlayMode } from "./scene/scrollVisuals.js?b=20260624d";
+import { BUILD } from "./version.js?b=20260624e";
+import { getProjects } from "../data/projectsStore.js?b=20260624e";
+import { initProjectViewers, ensureProjectViewer, pauseAllProjectMedia, renderProjectPalette, getProjectMedia } from "./ui/projectViewer.js?b=20260624e";
+import { initWardrobe } from "./ui/wardrobe.js?b=20260624e";
+import { initQs1berRadio } from "./ui/qs1berRadio.js?b=20260624e";
+import { scrollEase } from "./utils/easing.js?b=20260624e";
+import { getYoutubeId, youtubeThumbUrl, loadYoutubeApi } from "./utils/youtube.js?b=20260624e";
+import { getHeroStackBlend, isProjectChapter, smileyOverlayMode } from "./scene/scrollVisuals.js?b=20260624e";
 
 console.info(`[qs1ber] build ${BUILD}`);
 
@@ -14,8 +13,14 @@ const projects = getProjects();
 
 const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const isCoarsePointer = window.matchMedia("(pointer: coarse)").matches;
+/** Phones / narrow screens — text + video only, no WebGL */
+const isMobileLite = window.matchMedia("(max-width: 900px), (pointer: coarse)").matches;
 if (isCoarsePointer) {
   document.documentElement.classList.add("is-coarse-pointer");
+}
+if (isMobileLite) {
+  document.documentElement.classList.add("is-mobile-lite");
+  document.body.classList.add("is-mobile-lite");
 }
 const CONTACT_CHAPTER = projects.length + 1;
 const SCROLL_DURATION = 620;
@@ -229,7 +234,132 @@ function prefetchYoutubeApi() {
   loadYoutubeApi().catch(() => {});
 }
 
+function initMobileScroll(state) {
+  const root = document.getElementById("scrollRoot");
+  const sections = () => Array.from(document.querySelectorAll("[data-chapter]"));
+  state.syncPageMode = syncPageMode;
+  state.snapLock = false;
+  let current = 0;
+  let settleTimer = 0;
+
+  const chapterIndexFromId = (chapterId) =>
+    sections().findIndex((el) => Number(el.dataset.chapter) === chapterId);
+
+  const updateRail = (index) => {
+    const chapterId = Number(sections()[index]?.dataset.chapter ?? index);
+    let activeBtn = null;
+    document.querySelectorAll(".chapter-rail__item").forEach((el) => {
+      const isActive = Number(el.dataset.i) === chapterId;
+      el.classList.toggle("is-active", isActive);
+      if (isActive) activeBtn = el;
+    });
+    activeBtn?.scrollIntoView({ block: "nearest", behavior: "auto" });
+  };
+
+  const activateChapter = (index) => {
+    const list = sections();
+    index = Math.max(0, Math.min(list.length - 1, index));
+    if (index === current) {
+      state.chapterIndex = index;
+      state.chapterT = 1;
+      return;
+    }
+
+    const prev = current;
+    current = index;
+    state.chapterIndex = index;
+    state.chapterT = 1;
+    updateRail(index);
+    syncPageMode(index, index, 1);
+
+    if (prev >= 1 && prev <= projects.length && index !== prev) {
+      pauseAllProjectMedia();
+    }
+    if (index === 0) pauseAllProjectMedia();
+    if (index >= 1 && index <= projects.length) {
+      ensureProjectViewer(index - 1);
+    }
+  };
+
+  const nearestChapter = () => {
+    const list = sections();
+    const mid = root.scrollTop + root.clientHeight * 0.45;
+    let best = 0;
+    let bestDist = Infinity;
+    list.forEach((el, i) => {
+      const center = el.offsetTop + el.offsetHeight * 0.35;
+      const d = Math.abs(center - mid);
+      if (d < bestDist) {
+        bestDist = d;
+        best = i;
+      }
+    });
+    return best;
+  };
+
+  const onScroll = () => {
+    if (settleTimer) window.clearTimeout(settleTimer);
+    settleTimer = window.setTimeout(() => {
+      activateChapter(nearestChapter());
+    }, 80);
+  };
+
+  const goTo = (index, immediate = false) => {
+    const list = sections();
+    index = Math.max(0, Math.min(list.length - 1, index));
+    const target = list[index];
+    if (!target) return;
+
+    if (immediate || reduceMotion) {
+      root.scrollTop = target.offsetTop;
+      activateChapter(index);
+      return;
+    }
+
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+    activateChapter(index);
+  };
+
+  root.addEventListener("scroll", onScroll, { passive: true });
+
+  window.addEventListener("keydown", (e) => {
+    if (e.key === "ArrowDown" || e.key === "PageDown") {
+      e.preventDefault();
+      goTo(current + 1);
+    }
+    if (e.key === "ArrowUp" || e.key === "PageUp") {
+      e.preventDefault();
+      goTo(current - 1);
+    }
+  });
+
+  document.querySelectorAll("[data-goto]").forEach((btn) => {
+    btn.addEventListener("click", (e) => {
+      e.preventDefault();
+      goTo(Number(btn.dataset.goto));
+    });
+  });
+
+  document.getElementById("chapterRail")?.addEventListener("click", (e) => {
+    const item = e.target.closest(".chapter-rail__item");
+    if (!item) return;
+    const idx = chapterIndexFromId(Number(item.dataset.i));
+    if (idx >= 0) goTo(idx);
+  });
+
+  window.QS1BER.goToChapter = goTo;
+  root.scrollTop = 0;
+  syncPageMode(0, 0, 1);
+  updateRail(0);
+  document.body.classList.add("is-hero-active");
+}
+
 function initScroll(state, scene) {
+  if (isMobileLite) {
+    initMobileScroll(state);
+    return;
+  }
+
   const root = document.getElementById("scrollRoot");
   const sections = () => Array.from(document.querySelectorAll("[data-chapter]"));
   state.syncPageMode = syncPageMode;
@@ -264,7 +394,6 @@ function initScroll(state, scene) {
     if (toIndex === 0) pauseAllProjectMedia();
     if (toIndex >= 1 && toIndex <= projects.length) {
       ensureProjectViewer(toIndex - 1);
-      // YouTube mount shifts section offsets — re-clamp after layout settles.
       requestAnimationFrame(() => {
         clampToChapter(toIndex);
         requestAnimationFrame(() => clampToChapter(toIndex));
@@ -421,35 +550,6 @@ function initScroll(state, scene) {
   document.addEventListener("wheel", onChapterWheel, { passive: false, capture: true });
   root.addEventListener("scroll", lockScrollPosition, { passive: true });
 
-  let touchY = 0;
-  let touchStartTarget = null;
-  root.addEventListener(
-    "touchstart",
-    (e) => {
-      touchY = e.touches[0].clientY;
-      touchStartTarget = e.target;
-    },
-    { passive: true }
-  );
-  root.addEventListener(
-    "touchend",
-    (e) => {
-      if (document.body.classList.contains("is-wardrobe-open")) return;
-      if (
-        touchStartTarget?.closest?.(
-          ".project-strip, .project-meta, .wardrobe, .chapter-rail, .qs1ber-radio, .project-viewer__yt-ui, button, a, input"
-        )
-      ) {
-        return;
-      }
-      const dy = touchY - e.changedTouches[0].clientY;
-      if (Math.abs(dy) < 24) return;
-      if (animating) return;
-      goTo(current + (dy > 0 ? 1 : -1));
-    },
-    { passive: true }
-  );
-
   window.addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown" || e.key === "PageDown") { e.preventDefault(); goTo(current + 1); }
     if (e.key === "ArrowUp" || e.key === "PageUp") { e.preventDefault(); goTo(current - 1); }
@@ -486,35 +586,49 @@ function initScroll(state, scene) {
 }
 
 function initScene() {
-  const canvas = document.getElementById("bgCanvas");
-  if (!canvas) return null;
-  try {
-    return new SmileyScene(canvas, window.QS1BER);
-  } catch (err) {
-    console.error("[qs1ber] 3D scene failed:", err);
+  if (isMobileLite) {
     window.QS1BER.sceneReady = true;
     window.dispatchEvent(new CustomEvent("qs1ber:scene-ready"));
-    return null;
+    window.dispatchEvent(new CustomEvent("qs1ber:boot-ready"));
+    return Promise.resolve(null);
   }
+
+  const canvas = document.getElementById("bgCanvas");
+  if (!canvas) return Promise.resolve(null);
+
+  return import(`./scene/SmileyScene.js?b=${BUILD}`)
+    .then(({ SmileyScene }) => new SmileyScene(canvas, window.QS1BER))
+    .catch((err) => {
+      console.error("[qs1ber] 3D scene failed:", err);
+      window.QS1BER.sceneReady = true;
+      window.dispatchEvent(new CustomEvent("qs1ber:scene-ready"));
+      return null;
+    });
 }
 
-function init() {
+async function init() {
   buildChapterRail();
   buildProjectPanels();
   initPreloader();
-
-  const scene = initScene();
-  if (scene) {
-    window.QS1BER.listShapes = () => scene.listShapes();
-  } else {
-    window.dispatchEvent(new CustomEvent("qs1ber:boot-ready"));
-  }
 
   window.addEventListener("qs1ber:preloader-done", () => {
     document.body.classList.add("is-intro-ready");
   });
 
   window.addEventListener("qs1ber:scene-ready", () => prefetchYoutubeApi(), { once: true });
+
+  if (isMobileLite) {
+    initScroll(window.QS1BER, null);
+    await initScene();
+    return;
+  }
+
+  const scene = await initScene();
+  if (scene) {
+    window.QS1BER.listShapes = () => scene.listShapes();
+  } else {
+    window.dispatchEvent(new CustomEvent("qs1ber:boot-ready"));
+  }
 
   initScroll(window.QS1BER, scene);
   initQs1berRadio();
