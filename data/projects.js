@@ -157,6 +157,16 @@ Object.assign(projects[2], {
     "Spec piece built as practice for a popular streamer and his network. A simple commercial with taste — shot in one day, three days of production, three days in post. Fast turnaround without cutting corners on quality.",
   tags: ["Commercial", "Spec", "Cinematic"],
 });
+projects[2].media[0].poster = "/media/project-03/poster.jpg";
+projects[2].palette = [
+  { color: "#120d0c", label: "Night" },
+  { color: "#332318", label: "Cabin" },
+  { color: "#5f2811", label: "Amber" },
+  { color: "#463c40", label: "Rain" },
+  { color: "#745a5d", label: "Hoodie" },
+  { color: "#ae8585", label: "Glow" },
+];
+projects[2].media[0].palette = projects[2].palette;
 
 setDriveReel(
   projects[3],
@@ -174,6 +184,16 @@ Object.assign(projects[3], {
   tags: ["Commercial", "Brand", "Kickstarter"],
   tools: ["After Effects", "Cinema 4D", "Blender", "Houdini", "Substance Painter"],
 });
+projects[3].media[0].poster = "/media/project-04/poster.jpg";
+projects[3].palette = [
+  { color: "#272419", label: "Obsidian" },
+  { color: "#363123", label: "Case" },
+  { color: "#736140", label: "Bronze" },
+  { color: "#bc9260", label: "Gold" },
+  { color: "#b6ab8b", label: "Sand" },
+  { color: "#ddaa72", label: "Specular" },
+];
+projects[3].media[0].palette = projects[3].palette;
 
 setDriveReel(
   projects[4],
@@ -191,6 +211,16 @@ Object.assign(projects[4], {
   tags: ["Commercial", "Motion Design", "Creator"],
   tools: ["After Effects", "Cinema 4D", "Blender", "Houdini", "Substance Painter"],
 });
+projects[4].media[0].poster = "/media/project-05/poster.jpg";
+projects[4].palette = [
+  { color: "#99271d", label: "Ember" },
+  { color: "#c7683b", label: "Flame" },
+  { color: "#d1957b", label: "Heat" },
+  { color: "#e49b4e", label: "Streak" },
+  { color: "#f0c176", label: "Trail" },
+  { color: "#f7ea89", label: "Flash" },
+];
+projects[4].media[0].palette = projects[4].palette;
 
 setYoutubeReel(projects[5], "https://youtu.be/wOV0206d0kI");
 Object.assign(projects[5], {
@@ -204,6 +234,16 @@ Object.assign(projects[5], {
   tags: ["Commercial", "Gaming", "Case Battle"],
   tools: ["After Effects", "Cinema 4D", "Blender", "Houdini", "Substance Painter"],
 });
+projects[5].media[0].poster = "/media/project-06/poster.jpg";
+projects[5].palette = [
+  { color: "#93460f", label: "Cocoa" },
+  { color: "#b97311", label: "Caramel" },
+  { color: "#b18b5a", label: "Bar" },
+  { color: "#d99b10", label: "Splash" },
+  { color: "#e1c330", label: "Cheese" },
+  { color: "#d8ca88", label: "Bloom" },
+];
+projects[5].media[0].palette = projects[5].palette;
 
 setYoutubeReel(projects[6], "https://www.youtube.com/watch?v=Pav1RBCohzw");
 Object.assign(projects[6], {
@@ -217,6 +257,16 @@ Object.assign(projects[6], {
   tags: ["Commercial", "Contest"],
   tools: ["After Effects", "DaVinci Resolve"],
 });
+projects[6].media[0].poster = "/media/project-07/poster.jpg";
+projects[6].palette = [
+  { color: "#112727", label: "Abyss" },
+  { color: "#336463", label: "Teal" },
+  { color: "#5a8e8d", label: "Current" },
+  { color: "#81acac", label: "Chrome" },
+  { color: "#a5c5c5", label: "Bubble" },
+  { color: "#cddfe0", label: "Spark" },
+];
+projects[6].media[0].palette = projects[6].palette;
 
 setDriveReel(
   projects[7],
@@ -233,6 +283,16 @@ Object.assign(projects[7], {
   tags: ["Commercial", "Finance", "Brand"],
   tools: ["After Effects", "Figma"],
 });
+projects[7].media[0].poster = "/media/project-08/poster.jpg";
+projects[7].palette = [
+  { color: "#2e0d41", label: "Violet" },
+  { color: "#25205d", label: "Indigo" },
+  { color: "#28347a", label: "Orbit" },
+  { color: "#324d96", label: "Planet" },
+  { color: "#4469af", label: "Aura" },
+  { color: "#9cb6db", label: "Mist" },
+];
+projects[7].media[0].palette = projects[7].palette;
 
 setDriveReel(
   projects[8],
@@ -247,6 +307,16 @@ Object.assign(projects[8], {
   description: "Commercial for Bochkari.",
   tags: ["Commercial", "Brand"],
 });
+projects[8].media[0].poster = "/media/project-09/poster.jpg";
+projects[8].palette = [
+  { color: "#65220f", label: "Pit" },
+  { color: "#983e1a", label: "Flesh" },
+  { color: "#c36623", label: "Peach" },
+  { color: "#df892d", label: "Spiral" },
+  { color: "#eca948", label: "Amber" },
+  { color: "#f6d97e", label: "Dust" },
+];
+projects[8].media[0].palette = projects[8].palette;
 
 setDriveReel(
   projects[9],
@@ -261,3 +331,13 @@ Object.assign(projects[9], {
   description: "Commercial for Majestic.",
   tags: ["Commercial", "Brand"],
 });
+projects[9].media[0].poster = "/media/project-10/poster.jpg";
+projects[9].palette = [
+  { color: "#192625", label: "Altitude" },
+  { color: "#4b2f2a", label: "Earth" },
+  { color: "#27514a", label: "Emerald" },
+  { color: "#697a7b", label: "Cloud" },
+  { color: "#de4d6a", label: "Magenta" },
+  { color: "#b59c8d", label: "Metal" },
+];
+projects[9].media[0].palette = projects[9].palette;
