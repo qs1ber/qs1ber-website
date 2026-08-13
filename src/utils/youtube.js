@@ -27,6 +27,30 @@ export function isGoogleDriveUrl(url) {
   return Boolean(getGoogleDriveId(url));
 }
 
+const VIMEO_RE =
+  /(?:vimeo\.com\/(?:video\/)?|player\.vimeo\.com\/video\/)(\d+)/i;
+
+export function getVimeoId(url) {
+  if (!url) return null;
+  const m = String(url).match(VIMEO_RE);
+  return m?.[1] ?? null;
+}
+
+export function isVimeoUrl(url) {
+  return Boolean(getVimeoId(url));
+}
+
+export function vimeoEmbedUrl(id, params = {}) {
+  const q = new URLSearchParams({
+    title: "0",
+    byline: "0",
+    portrait: "0",
+    dnt: "1",
+    ...params,
+  });
+  return `https://player.vimeo.com/video/${id}?${q}`;
+}
+
 export function youtubeEmbedUrl(id, params = {}) {
   const q = new URLSearchParams({
     rel: "0",

@@ -145,6 +145,10 @@ function setDriveReel(project, url) {
   project.media[0].poster = "";
 }
 
+function setVimeoReel(project, url) {
+  project.media[0].src = url;
+}
+
 setYoutubeReel(projects[2], "https://www.youtube.com/watch?v=Nd5Ir8tRCJk");
 Object.assign(projects[2], {
   title: "Spec Commercial",
@@ -168,10 +172,7 @@ projects[2].palette = [
 ];
 projects[2].media[0].palette = projects[2].palette;
 
-setDriveReel(
-  projects[3],
-  "https://drive.google.com/file/d/1DpEmFgbWAuormhE8Pac6hhgnlvM_nHKp/view?usp=sharing"
-);
+setVimeoReel(projects[3], "https://vimeo.com/1218084347");
 Object.assign(projects[3], {
   title: "UWO",
   role: "Director · DOP · Post",
@@ -195,10 +196,7 @@ projects[3].palette = [
 ];
 projects[3].media[0].palette = projects[3].palette;
 
-setDriveReel(
-  projects[4],
-  "https://drive.google.com/file/d/17Bj8YHod1d97Mm3Pe6JVnfQN7iqA-xGd/view?usp=sharing"
-);
+setVimeoReel(projects[4], "https://vimeo.com/1218085211");
 Object.assign(projects[4], {
   title: "Yragun",
   role: "Director · DOP · Post",
@@ -268,10 +266,7 @@ projects[6].palette = [
 ];
 projects[6].media[0].palette = projects[6].palette;
 
-setDriveReel(
-  projects[7],
-  "https://drive.google.com/file/d/1cuSQdt_L1mwhkvBxs4-z4mvjAA6bxFp0/view?usp=sharing"
-);
+setVimeoReel(projects[7], "https://vimeo.com/1218085299");
 Object.assign(projects[7], {
   title: "Sovcom Bank",
   role: "Director · DOP · Post",
@@ -294,10 +289,7 @@ projects[7].palette = [
 ];
 projects[7].media[0].palette = projects[7].palette;
 
-setDriveReel(
-  projects[8],
-  "https://drive.google.com/file/d/1BViRssM1Dz0MS5TK_YOWL4zYU2Huzxbo/view?usp=sharing"
-);
+setVimeoReel(projects[8], "https://vimeo.com/1218085610");
 Object.assign(projects[8], {
   title: "Bochkari",
   role: "Director · DOP · Post",
@@ -318,10 +310,7 @@ projects[8].palette = [
 ];
 projects[8].media[0].palette = projects[8].palette;
 
-setDriveReel(
-  projects[9],
-  "https://drive.google.com/file/d/1FjbtgbWIuzYzI4DRThyNGC_U4boPJVqt/view?usp=sharing"
-);
+setVimeoReel(projects[9], "https://vimeo.com/1218085820");
 Object.assign(projects[9], {
   title: "Majestic",
   role: "Director · DOP · Post",

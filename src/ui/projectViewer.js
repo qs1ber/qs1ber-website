@@ -1,7 +1,16 @@
 /** Shotdeck-style fullscreen viewer + media strip per project */
 
-import { getProjects } from "../../data/projectsStore.js?b=20260621f";
-import { getYoutubeId, getGoogleDriveId, googleDrivePreviewUrl, loadYoutubeApi, youtubePosterUrls, youtubeThumbUrl } from "../utils/youtube.js?b=20260621z";
+import { getProjects } from "../../data/projectsStore.js?b=20260813v";
+import {
+  getYoutubeId,
+  getGoogleDriveId,
+  getVimeoId,
+  googleDrivePreviewUrl,
+  vimeoEmbedUrl,
+  loadYoutubeApi,
+  youtubePosterUrls,
+  youtubeThumbUrl,
+} from "../utils/youtube.js?b=20260813v";
 
 const projects = getProjects();
 
@@ -372,6 +381,19 @@ function mountGoogleDrive(stage, driveId, label) {
     ></iframe>`;
 }
 
+function mountVimeo(stage, vimeoId, label) {
+  destroyYoutubeStage(stage);
+  stage.innerHTML = `
+    <iframe
+      class="project-viewer__media project-viewer__vimeo"
+      src="${vimeoEmbedUrl(vimeoId)}"
+      title="${label}"
+      allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
+      allowfullscreen
+      loading="lazy"
+    ></iframe>`;
+}
+
 function stageSize(stage) {
   const rect = stage.getBoundingClientRect();
   return {
@@ -461,8 +483,11 @@ export function initProjectViewers() {
 
       if (type === "video") {
         const driveId = getGoogleDriveId(src);
+        const vimeoId = getVimeoId(src);
         if (ytId) {
           mountYoutube(stage, ytId, label, poster);
+        } else if (vimeoId) {
+          mountVimeo(stage, vimeoId, label);
         } else if (driveId) {
           mountGoogleDrive(stage, driveId, label);
         } else {

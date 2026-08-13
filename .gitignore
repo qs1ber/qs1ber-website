@@ -6,3 +6,5 @@ dist/
 .env.*
 assets/whole_wardrobe.blend*
 assets/wardrobe/headphones beyerdynamics/
+tools/_vimeo_upload/
+tools/_palette_frames/

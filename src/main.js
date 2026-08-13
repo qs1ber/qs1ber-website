@@ -1,10 +1,10 @@
-import { BUILD } from "./version.js?b=20260624e";
-import { getProjects } from "../data/projectsStore.js?b=20260624e";
-import { initProjectViewers, ensureProjectViewer, pauseAllProjectMedia, renderProjectPalette, getProjectMedia } from "./ui/projectViewer.js?b=20260624e";
+import { BUILD } from "./version.js?b=20260813v";
+import { getProjects } from "../data/projectsStore.js?b=20260813v";
+import { initProjectViewers, ensureProjectViewer, pauseAllProjectMedia, renderProjectPalette, getProjectMedia } from "./ui/projectViewer.js?b=20260813v";
 import { initWardrobe } from "./ui/wardrobe.js?b=20260624e";
 import { initQs1berRadio } from "./ui/qs1berRadio.js?b=20260624e";
 import { scrollEase } from "./utils/easing.js?b=20260624e";
-import { getYoutubeId, youtubeThumbUrl, loadYoutubeApi } from "./utils/youtube.js?b=20260624e";
+import { getYoutubeId, youtubeThumbUrl, loadYoutubeApi } from "./utils/youtube.js?b=20260813v";
 import { getHeroStackBlend, isProjectChapter, smileyOverlayMode } from "./scene/scrollVisuals.js?b=20260624e";
 
 console.info(`[qs1ber] build ${BUILD}`);

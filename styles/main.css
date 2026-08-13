@@ -883,7 +883,8 @@ body.is-canvas-front .project-viewer__stage {
   pointer-events: none;
 }
 
-.project-viewer__drive {
+.project-viewer__drive,
+.project-viewer__vimeo {
   border: 0;
   object-fit: unset;
 }

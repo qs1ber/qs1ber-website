@@ -39,7 +39,7 @@ function mediaFields(media, mi) {
       <label>Label <input data-field="label" value="${esc(media.label || "")}" /></label>
       <label>Source URL
         <div class="admin-url-row">
-          <input data-field="src" value="${esc(media.src || "")}" placeholder="YouTube / Drive / mp4" />
+          <input data-field="src" value="${esc(media.src || "")}" placeholder="YouTube / Vimeo / Drive / mp4" />
           <button type="button" class="admin-btn admin-btn--ghost" data-action="open-url" data-field="src">Open</button>
         </div>
       </label>
