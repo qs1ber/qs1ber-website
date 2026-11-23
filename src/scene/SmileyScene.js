@@ -21,7 +21,7 @@ const CONTACT_SCALE = 0.88;
 
 const PINK = 0xff3d9a;
 const MODEL_BASE = "assets/models";
-const SMILEY_FBX = "assets/cube5.fbx";
+const SMILEY_FBX = "assets/cube5.fbx?v=20261123";
 const WARDROBE_TEX = "assets/wardrobe";
 const TEX_ANISO_DESKTOP = 4;
 const TEX_ANISO_MOBILE = 2;
@@ -151,6 +151,12 @@ const WARDROBE_SCALE_MULT = 0.92;
 const WARDROBE_SCALE_MULT_MOBILE = 0.84;
 const WARDROBE_ANCHOR_Y = 0.58;
 const MOBILE_MAX_DPR = 1.5;
+/** Bokeh + bloom run full-screen — DPR 2 on a 4K/Retina display is 4× the pixels for little visible gain. */
+const DESKTOP_MAX_DPR = 1.5;
+/** Adaptive quality: if the scene can't hold ~40 fps, step the pixel ratio down (never back up). */
+const ADAPT_SAMPLE_FRAMES = 90;
+const ADAPT_SLOW_FRAME_S = 1 / 40;
+const ADAPT_DPR_STEPS = [1.25, 1];
 
 export class SmileyScene {
   static _detectMobileLayout() {
@@ -162,7 +168,43 @@ export class SmileyScene {
   }
 
   _maxDevicePixelRatio() {
-    return this._isMobileLayout ? MOBILE_MAX_DPR : 2;
+    const cap = this._isMobileLayout ? MOBILE_MAX_DPR : DESKTOP_MAX_DPR;
+    return Math.min(cap, this._adaptiveDprCap ?? Infinity);
+  }
+
+  _applyPixelRatio() {
+    if (this._scrollPerfActive) return;
+    const w = window.innerWidth;
+    const h = window.innerHeight;
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, this._maxDevicePixelRatio()));
+    this.renderer.setSize(w, h);
+    this.composer?.setSize(w, h);
+    this.bloomPass?.setSize(w, h);
+  }
+
+  /** Called every frame with the real (unclamped) frame time. */
+  _sampleFrameTime(rawDt) {
+    if (!this.introDone || this._scrollPerfActive || this.state.snapLock || document.hidden) {
+      this._adaptFrames = 0;
+      this._adaptTime = 0;
+      return;
+    }
+    if (rawDt > 0.5) return; // tab switch / hitch — ignore
+    this._adaptFrames = (this._adaptFrames || 0) + 1;
+    this._adaptTime = (this._adaptTime || 0) + rawDt;
+    if (this._adaptFrames < ADAPT_SAMPLE_FRAMES) return;
+
+    const avg = this._adaptTime / this._adaptFrames;
+    this._adaptFrames = 0;
+    this._adaptTime = 0;
+    if (avg <= ADAPT_SLOW_FRAME_S) return;
+
+    const current = Math.min(window.devicePixelRatio, this._maxDevicePixelRatio());
+    const next = ADAPT_DPR_STEPS.find((v) => v < current - 0.01);
+    if (next == null) return;
+    this._adaptiveDprCap = next;
+    this._applyPixelRatio();
+    console.info(`[qs1ber] slow GPU (${Math.round(1 / avg)} fps) — pixel ratio → ${next}`);
   }
 
   constructor(canvas, state) {
@@ -652,11 +694,27 @@ export class SmileyScene {
     return out.copy(this.camera.position).addScaledVector(this._spawnNdc, depth);
   }
 
+  /**
+   * Re-apply visuals for wherever the page actually is. The intro / warm-up used
+   * to force hero visuals (chapter 0) — if the visitor had already scrolled to a
+   * project (slow PC, impatient scroll during the preloader), the hero decor and
+   * its opaque grey background stayed on top of the project video.
+   */
+  _syncVisualsToCurrentChapter() {
+    if (this.state.snapLock) return; // a scroll animation is running — it will set visuals itself
+    const ch = Number.isFinite(this.state.chapterIndex) ? this.state.chapterIndex : 0;
+    this._fromChapter = ch;
+    this._toChapter = ch;
+    this._scrollFrom = ch;
+    this._scrollTo = ch;
+    this._lastBlendKey = -1;
+    this._applyScrollVisuals(ch, ch, 1);
+    this.state.syncPageMode?.(ch, ch, 1);
+  }
+
   _onIntroComplete() {
     this.state.chapterT = 1;
-    this._scrollFrom = 0;
-    this._scrollTo = 0;
-    this._applyScrollVisuals(0, 0, 1);
+    this._syncVisualsToCurrentChapter();
     this._runBootWarmup()
       .then(() => window.dispatchEvent(new CustomEvent("qs1ber:boot-ready")))
       .catch(() => window.dispatchEvent(new CustomEvent("qs1ber:boot-ready")));
@@ -673,7 +731,7 @@ export class SmileyScene {
         requestAnimationFrame(() => {
           this._warmFirstScroll();
           requestAnimationFrame(() => {
-            this._applyScrollVisuals(0, 0, 1);
+            this._syncVisualsToCurrentChapter();
             resolve();
           });
         });
@@ -793,7 +851,8 @@ export class SmileyScene {
     this._scrollPerfActive = false;
     const w = window.innerWidth;
     const h = window.innerHeight;
-    const dpr = this._savedDpr ?? Math.min(window.devicePixelRatio, this._maxDevicePixelRatio());
+    const maxDpr = Math.min(window.devicePixelRatio, this._maxDevicePixelRatio());
+    const dpr = Math.min(this._savedDpr ?? maxDpr, maxDpr);
     this.renderer.setPixelRatio(dpr);
     this.renderer.setSize(w, h);
     this.composer?.setSize(w, h);
@@ -1080,7 +1139,14 @@ export class SmileyScene {
   }
 
   async _loadSmiley() {
-    const loader = new FBXLoader();
+    // The FBX's embedded textures were stripped (all materials are replaced with
+    // the .webp maps below), so answer its leftover image lookups with a 1×1 pixel
+    // instead of firing 404s at assets/*.png.
+    const fbxManager = new THREE.LoadingManager();
+    const BLANK_PX =
+      "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=";
+    fbxManager.setURLModifier((url) => (/\.fbx(\?|$)/i.test(url) ? url : BLANK_PX));
+    const loader = new FBXLoader(fbxManager);
     const texLoader = new THREE.TextureLoader();
 
     const faceMap = await this._loadTex(texLoader, `${MODEL_BASE}/1_diffuseOriginal.webp`);
@@ -2186,7 +2252,9 @@ export class SmileyScene {
   }
 
   _animate() {
-    const dt = Math.min(this.clock.getDelta(), 0.05);
+    const rawDt = this.clock.getDelta();
+    const dt = Math.min(rawDt, 0.05);
+    this._sampleFrameTime(rawDt);
     const t = this.clock.elapsedTime;
 
     if (!this.introDone) {

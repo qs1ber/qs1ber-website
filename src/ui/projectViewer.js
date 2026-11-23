@@ -1,6 +1,6 @@
 /** Shotdeck-style fullscreen viewer + media strip per project */
 
-import { getProjects } from "../../data/projectsStore.js?b=20260813v";
+import { getProjects } from "../../data/projectsStore.js?b=20261123m";
 import {
   getYoutubeId,
   getGoogleDriveId,
@@ -10,9 +10,18 @@ import {
   loadYoutubeApi,
   youtubePosterUrls,
   youtubeThumbUrl,
-} from "../utils/youtube.js?b=20260813v";
+} from "../utils/youtube.js?b=20261123m";
 
 const projects = getProjects();
+
+/** Phones / touch tablets: same rule as main.js — no custom YT UI, native embeds instead. */
+const isMobileLite = (() => {
+  try {
+    return window.matchMedia("(max-width: 900px), (pointer: coarse)").matches;
+  } catch {
+    return false;
+  }
+})();
 
 const ytPlayers = new Map();
 let ytMountId = 0;
@@ -92,6 +101,22 @@ function isMountCurrent(stage, gen) {
 export function pauseAllProjectMedia() {
   document.querySelectorAll(".project-viewer__media").forEach((el) => {
     if (el.tagName === "VIDEO") el.pause();
+  });
+
+  // Plain embeds (mobile YouTube / Vimeo) — ask the player to pause via postMessage.
+  document.querySelectorAll("iframe.project-viewer__mobile-embed, iframe.project-viewer__vimeo").forEach((frame) => {
+    try {
+      if (frame.classList.contains("project-viewer__vimeo")) {
+        frame.contentWindow?.postMessage(JSON.stringify({ method: "pause" }), "*");
+      } else {
+        frame.contentWindow?.postMessage(
+          JSON.stringify({ event: "command", func: "pauseVideo", args: [] }),
+          "*"
+        );
+      }
+    } catch {
+      /* cross-origin frame not ready */
+    }
   });
 
   ytPlayers.forEach(({ player }) => {
@@ -368,6 +393,46 @@ async function mountYoutube(stage, ytId, label, poster = "") {
   }
 }
 
+/** Mobile: poster + play button; real YouTube player (native controls) only after a tap. */
+function mountYoutubeMobile(stage, ytId, label, poster = "") {
+  destroyYoutubeStage(stage);
+  const { src: posterSrc, fallback: posterFallback } = youtubePosterUrls(ytId, poster);
+  stage.innerHTML = `
+    <div class="project-viewer__yt">
+      <img class="project-viewer__yt-poster" src="${posterSrc}" data-fallback="${posterFallback}" alt="" draggable="false" decoding="async" />
+      <div class="project-viewer__yt-ui">
+        <button type="button" class="project-viewer__yt-hit" aria-label="Play ${label}">
+          <span class="project-viewer__yt-hit-icon" aria-hidden="true">▶</span>
+        </button>
+      </div>
+    </div>`;
+  const img = stage.querySelector(".project-viewer__yt-poster");
+  img?.addEventListener("error", function () {
+    const next = this.dataset.fallback;
+    if (next && this.src !== next) this.src = next;
+  });
+  stage.querySelector(".project-viewer__yt-hit")?.addEventListener("click", (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const q = new URLSearchParams({
+      autoplay: "1",
+      playsinline: "1",
+      rel: "0",
+      modestbranding: "1",
+      enablejsapi: "1",
+      origin: window.location.origin,
+    });
+    stage.innerHTML = `
+      <iframe
+        class="project-viewer__mobile-embed"
+        src="https://www.youtube.com/embed/${ytId}?${q}"
+        title="${label}"
+        allow="autoplay; encrypted-media; fullscreen; picture-in-picture"
+        allowfullscreen
+      ></iframe>`;
+  });
+}
+
 function mountGoogleDrive(stage, driveId, label) {
   destroyYoutubeStage(stage);
   stage.innerHTML = `
@@ -485,7 +550,8 @@ export function initProjectViewers() {
         const driveId = getGoogleDriveId(src);
         const vimeoId = getVimeoId(src);
         if (ytId) {
-          mountYoutube(stage, ytId, label, poster);
+          if (isMobileLite) mountYoutubeMobile(stage, ytId, label, poster);
+          else mountYoutube(stage, ytId, label, poster);
         } else if (vimeoId) {
           mountVimeo(stage, vimeoId, label);
         } else if (driveId) {
@@ -498,7 +564,8 @@ export function initProjectViewers() {
       }
 
       if (strip && thumbs[active]) {
-        strip.scrollTo({ left: thumbs[active].offsetLeft - 24, behavior: "smooth" });
+        const left = Math.max(0, thumbs[active].offsetLeft - 24);
+        strip.scrollTo({ left, behavior: "smooth" });
       }
     };
 

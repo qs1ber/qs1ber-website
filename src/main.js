@@ -1,11 +1,11 @@
-import { BUILD } from "./version.js?b=20260813v";
-import { getProjects } from "../data/projectsStore.js?b=20260813v";
-import { initProjectViewers, ensureProjectViewer, pauseAllProjectMedia, renderProjectPalette, getProjectMedia } from "./ui/projectViewer.js?b=20260813v";
-import { initWardrobe } from "./ui/wardrobe.js?b=20260624e";
-import { initQs1berRadio } from "./ui/qs1berRadio.js?b=20260624e";
-import { scrollEase } from "./utils/easing.js?b=20260624e";
-import { getYoutubeId, youtubeThumbUrl, loadYoutubeApi } from "./utils/youtube.js?b=20260813v";
-import { getHeroStackBlend, isProjectChapter, smileyOverlayMode } from "./scene/scrollVisuals.js?b=20260624e";
+import { BUILD } from "./version.js?b=20261123m";
+import { getProjects } from "../data/projectsStore.js?b=20261123m";
+import { initProjectViewers, ensureProjectViewer, pauseAllProjectMedia, renderProjectPalette, getProjectMedia } from "./ui/projectViewer.js?b=20261123m";
+import { initWardrobe } from "./ui/wardrobe.js?b=20261123m";
+import { initQs1berRadio } from "./ui/qs1berRadio.js?b=20261123m";
+import { scrollEase } from "./utils/easing.js?b=20261123m";
+import { getYoutubeId, youtubeThumbUrl, loadYoutubeApi } from "./utils/youtube.js?b=20261123m";
+import { getHeroStackBlend, isProjectChapter, smileyOverlayMode } from "./scene/scrollVisuals.js?b=20261123m";
 
 console.info(`[qs1ber] build ${BUILD}`);
 
@@ -118,9 +118,11 @@ function buildProjectPanels() {
           ${
             m.type === "video"
               ? ytId || thumbPoster
-                ? `<img src="${thumbPoster}" alt="${m.label}" loading="lazy" />`
+                ? `<img src="${thumbPoster}" alt="${m.label}" loading="lazy" decoding="async"${
+                  ytId ? ` onerror="this.onerror=null;this.src='${youtubeThumbUrl(ytId, "hq")}'"` : ""
+                } />`
                 : `<video muted playsinline preload="metadata" src="${m.src}"></video>`
-              : `<img src="${m.src}" alt="${m.label}" loading="lazy" />`
+              : `<img src="${m.src}" alt="${m.label}" loading="lazy" decoding="async" />`
           }
           <span class="project-strip__caption">${m.label}</span>
         </button>`;
@@ -321,6 +323,23 @@ function initMobileScroll(state) {
   };
 
   root.addEventListener("scroll", onScroll, { passive: true });
+
+  // Boot each project's player shortly before it scrolls into view, and stop
+  // playback once it leaves — panels are content-height on mobile, so the
+  // "nearest chapter" guess alone can skip fast flings.
+  if ("IntersectionObserver" in window) {
+    const io = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const chapter = Number(entry.target.dataset.chapter);
+          if (!(chapter >= 1 && chapter <= projects.length)) return;
+          if (entry.isIntersecting) ensureProjectViewer(chapter - 1);
+        });
+      },
+      { root, rootMargin: "300px 0px" }
+    );
+    document.querySelectorAll(".project-panel").forEach((el) => io.observe(el));
+  }
 
   window.addEventListener("keydown", (e) => {
     if (e.key === "ArrowDown" || e.key === "PageDown") {
